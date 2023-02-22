@@ -1,9 +1,9 @@
 {
-  "name": "seneca-mem-store",
+  "name": "seneca-knex-store",
   "version": "7.0.1",
-  "description": "Seneca in-memory data storage plugin.",
-  "main": "dist/mem-store.js",
-  "types": "dist/mem-store.d.ts",
+  "description": "Seneca data storag plugin for Knex.",
+  "main": "dist/knex-store.js",
+  "types": "dist/knex-store.d.ts",
   "license": "MIT",
   "author": "Richard Rodger (http://richardrodger.com)",
   "contributors": [
@@ -32,14 +32,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/senecajs/seneca-mem-store"
+    "url": "https://github.com/senecajs/seneca-knex-store"
   },
   "keywords": [
     "seneca",
     "plugin",
     "store",
-    "mem",
-    "memory"
+    "knex",
+    "knexjs"
   ],
   "peerDependencies": {
     "seneca": ">=3",
@@ -62,5 +62,9 @@
     "LICENSE",
     "src",
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "knex": "^2.4.2",
+    "pg": "^8.9.0"
+  }
 }
