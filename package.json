@@ -43,7 +43,9 @@
   ],
   "peerDependencies": {
     "seneca": ">=3",
-    "seneca-entity": ">=18"
+    "seneca-entity": ">=18",
+    "knex": ">=2.4.2",
+    "pg": ">=8.8.0"
   },
   "devDependencies": {
     "@hapi/code": "9.0.1",
@@ -62,9 +64,5 @@
     "LICENSE",
     "src",
     "dist"
-  ],
-  "dependencies": {
-    "knex": "^2.4.2",
-    "pg": "^8.9.0"
-  }
+  ]
 }
