@@ -1,4 +1,4 @@
-const { Q, transactionQuery} = require('./qbuilder')
+const Q = require('./qbuilder')
 
 export class intern {
   static async find_knex(ent: any, q: any): Promise<any> {
