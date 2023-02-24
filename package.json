@@ -1,5 +1,5 @@
 {
-  "name": "seneca-knex-store",
+  "name": "@seneca/knex-store",
   "version": "7.0.1",
   "description": "Seneca data storag plugin for Knex.",
   "main": "dist/knex-store.js",
