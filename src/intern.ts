@@ -14,6 +14,18 @@ export class intern {
 
   }
 
+  static async first_knex(ent: any, q: any): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
+
+    const args = {
+      table_name: ent_table,
+      id: q
+    }
+
+    const query = Q.first(args)
+    return query
+  }
+
   static async insert_knex(ent: any, data: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
@@ -61,69 +73,6 @@ export class intern {
     }
 
     const query = Q.upsert(args)
-    return query
-  }
-
-  static async find_knex_transaction(ent: any, q: any): Promise<any> {
-    const ent_table = intern.tablenameUtil(ent)
-
-    const args = {
-      table_name: ent_table,
-      id: q
-    }
-
-    const query = transactionQuery.select(args)
-    return query
-
-  }
-
-  static async insert_knex_transaction(ent: any, data: any): Promise<any> {
-    const ent_table = intern.tablenameUtil(ent)
-
-    const args = {
-      table_name: ent_table,
-      data: data
-    }
-
-    const query = transactionQuery.insert(args)
-    return query
-  }
-
-  static async update_knex_transaction(ent: any, data: any, q: any): Promise<any> {
-    const ent_table = intern.tablenameUtil(ent)
-
-    const args = {
-      table_name: ent_table,
-      data: data,
-      id: q
-    }
-
-    const query = transactionQuery.update(args)
-    return query
-  }
-
-  static async remove_knex_transaction(ent: any, q: any): Promise<any> {
-    const ent_table = intern.tablenameUtil(ent)
-
-    const args = {
-      table_name: ent_table,
-      id: q
-    }
-
-    const query = transactionQuery.delete(args)
-    return query
-  }
-
-  static async upsert_knex_transaction(ent: any, data: any, q: any): Promise<any> {
-    const ent_table = intern.tablenameUtil(ent)
-
-    const args = {
-      table_name: ent_table,
-      data: data,
-      id: q
-    }
-
-    const query = transactionQuery.upsert(args)
     return query
   }
 
