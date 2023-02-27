@@ -1,6 +1,7 @@
 const Q = require('./qbuilder')
 
 export class intern {
+
   static async find_knex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
@@ -123,6 +124,26 @@ export class intern {
     conf.password = conf.password || conf.pass
 
     return conf
+  }
+
+  static buildCtx(seneca: any, msg: any, meta: any) {
+    const transaction = seneca.fixedmeta?.custom?.sys__entity?.transaction
+    let ctx = null
+
+    if(transaction && false !== msg.transaction$) {
+      transaction.trace.push({
+        when: Date.now(),
+        msg,
+        meta,
+      })
+      
+      ctx = {
+        transaction,
+        client: transaction.client,
+      }
+    }
+    
+    return ctx
   }
 
 }
