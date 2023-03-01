@@ -2,7 +2,7 @@ const Q = require('./qbuilder')
 
 export class intern {
 
-  static async find_knex(ent: any, q: any): Promise<any> {
+  static async findKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -15,7 +15,7 @@ export class intern {
 
   }
 
-  static async first_knex(ent: any, q: any): Promise<any> {
+  static async firstKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -27,7 +27,7 @@ export class intern {
     return query
   }
 
-  static async insert_knex(ent: any, data: any): Promise<any> {
+  static async insertKnex(ent: any, data: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -39,7 +39,7 @@ export class intern {
     return query
   }
 
-  static async update_knex(ent: any, data: any, q: any): Promise<any> {
+  static async updateKnex(ent: any, data: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -52,7 +52,7 @@ export class intern {
     return query
   }
 
-  static async remove_knex(ent: any, q: any): Promise<any> {
+  static async removeKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -64,7 +64,7 @@ export class intern {
     return query
   }
 
-  static async upsert_knex(ent: any, data: any, q: any): Promise<any> {
+  static async upsertKnex(ent: any, data: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -83,8 +83,8 @@ export class intern {
     return (canon.base ? canon.base + '_' : '') + canon.name
   }
 
-  static async is_new(ent: any) {
-    const isNew = await intern.find_knex(ent, ent.id)
+  static async isNew(ent: any) {
+    const isNew = await intern.findKnex(ent, ent.id)
 
     if (isNew) {
       return true
