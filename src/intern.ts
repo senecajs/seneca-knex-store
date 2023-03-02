@@ -1,4 +1,4 @@
-const Q = require('./qbuilder')
+import Q from './qbuilder'
 
 export class intern {
 
@@ -39,12 +39,14 @@ export class intern {
     return query
   }
 
-  static async updateKnex(ent: any, data: any, q: any): Promise<any> {
+  static async updateKnex(ent: any, ctx: any, q: any): Promise<any> {
+    const { client } = ctx
+    const escapeIdentifier = client.escapeIdentifier.bind(client)
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
       table_name: ent_table,
-      data: data,
+      data: escapeIdentifier,
       id: q
     }
 
