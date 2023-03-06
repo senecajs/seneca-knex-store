@@ -1,6 +1,7 @@
 /* Copyright (c) 2010-2022 Richard Rodger and other contributors, MIT License */
 import { intern } from './intern'
 const Pg = require('pg')
+const { asyncMethod } = intern
 
 const STORE_NAME = 'knex-store'
 
@@ -15,7 +16,7 @@ type Options = {
 
 function knex_store(this: any, options: Options) {
   // Take a reference to the calling Seneca instance
-  const seneca: any = this
+  const seneca = this
   
   let dbPool: {
     end: any ,
@@ -43,56 +44,57 @@ function knex_store(this: any, options: Options) {
     // use in seneca.use(), eg seneca.use('knex-store').
     name: STORE_NAME,
 
-    save: async function (this: any, msg: any, meta: any, reply: any) {
-      // Take a reference to Seneca
-      // and the entity to save
+    save: asyncMethod(async function (this: any, msg: any, meta: any){
       const seneca = this
-      const { ent, q } = msg
-      console.log(ent)
-      console.log(meta)
-      
+
       const ctx = intern.buildCtx(seneca, msg, meta)
+      
+      return intern.withDbClient(dbPool, ctx, async (client: any) => {
+          const ctx = { seneca, client }
+          const { ent, q } = msg
+          const { auto_increment$: autoIncrement = false } = q
 
-      // check if we are in create mode,
-      // if we are do a create, otherwise
-      // we will do a save instead
 
-      // Check async if the entity is new or not
-      const is_new = await intern.isNew(ent)
+          // check if we are in create mode,
+          // if we are do a create, otherwise
+          // we will do a save instead
+          // Check async if the entity is new or not
+          const is_new = await intern.isNew(ent)
+          console.log('is_new',is_new)
 
-      return is_new ? do_create() : do_save()
+          // return is_new ? do_create() : do_save()
+        return do_create()
+          // Create a new entity
+          async function do_create() {
+            // generate a new id for the entity
+            // const id = intern.generateId()
 
-      // Create a new entity
-      async function do_create() {
-        // generate a new id for the entity
-        const id = options.generate_id(ent)
+            // create a new entity
+            try {
+            const newEnt = ent.clone$()
+            console.log('newEnt', newEnt)
 
-        // create a new entity
-        try {
-          const result = await intern
-            .insertKnex(ent, id)
-            console.log(result)
-          // update the entity with the new id
-          ent.id = id
+            const insertTest = intern.insertKnex(newEnt, ctx)
+            console.log(insertTest)
 
-          // call the reply callback with the
-          // updated entity
-          reply(null, ent)
-        } catch (err) {
-          // if there is an error, call the reply
-          // callback with the error
-          reply(err)
-        }
-      }
+            return insertTest
 
-      // Save an existing entity  
-      function do_save() {
-        intern.updateKnex(ent, ctx, q)
-        // call the reply callback with the
-        // updated entity
-        reply(null, ent)
-      }
-    },
+            } catch (err) {
+              console.log(err)
+              return err
+            }
+          }
+
+          // Save an existing entity  
+          function do_save() {
+            const doSave = intern.updateKnex(ent, ctx)
+            // call the reply callback with the
+            // updated entity
+            console.log(doSave)
+            return doSave
+          }
+        })
+    }),
 
     load: async function (this: any, msg: any, reply: any) {
       const qent = msg.qent
@@ -140,6 +142,45 @@ function knex_store(this: any, options: Options) {
   seneca.add({ init: store.name, tag: meta.tag }, function (_msg: any, done: any) {
     return configure(options, done)
   })
+
+  seneca.add(intern.msgForGenerateId({ role: 'sql', target: STORE_NAME }),
+  function (_msg: any, done: any) {
+    const id = intern.generateId()
+    return done(null, { id })
+  })
+
+
+seneca.add('sys:entity,transaction:begin', (msg: any, reply: any) => {
+  // NOTE: `BEGIN` is called in intern.withDbClient
+  reply({
+    handle: { id: this.util.Nid(), name: 'postgres' }
+  })
+})
+
+seneca.add('sys:entity,transaction:end', function(msg: any, reply: any) {
+  let transaction = msg.details()
+  let client = transaction.client
+  client.query('COMMIT')
+    .then(()=>{
+      reply({
+        done: true
+      })
+    })
+    .catch((err: any)=>reply(err))
+})
+
+seneca.add('sys:entity,transaction:rollback', function(msg: any, reply: any) {
+  let transaction = msg.details()
+  let client = transaction.client
+
+  client.query('ROLLBACK')
+    .then(()=>{
+      reply({
+        done: false, rollback: true
+      })
+    })
+    .catch((err: any)=>reply(err))
+})
 
   // We don't return the store itself, it will self load into Seneca via the
   // init() function. Instead we return a simple object with the stores name
