@@ -1,6 +1,24 @@
 import Q from './qbuilder'
+const Uuid = require('uuid').v4
+const Assert = require('assert')
+
 
 export class intern {
+
+  static asyncMethod(f: any) {
+    return function(this: any, msg: any, done: any, meta: any) {
+      const seneca = this
+      const p = f.call(seneca, msg, meta)
+
+      Assert('function' === typeof p.then &&
+      'function' === typeof p.catch,
+      'The function must be async, i.e. return a promise.')
+
+      return p
+        .then((result: any) => done(null, result))
+        .catch(done)
+    }
+  }
 
   static async findKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
@@ -29,17 +47,21 @@ export class intern {
 
   static async insertKnex(ent: any, data: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
+
+    console.log('entp', entp)
 
     const args = {
       table_name: ent_table,
-      data: data
+      data: {...entp, id: Uuid()},
     }
 
     const query = Q.insert(args)
+    console.log('query', query)
     return query
   }
 
-  static async updateKnex(ent: any, ctx: any, q: any): Promise<any> {
+  static async updateKnex(ent: any, ctx: any): Promise<any> {
     const { client } = ctx
     const escapeIdentifier = client.escapeIdentifier.bind(client)
     const ent_table = intern.tablenameUtil(ent)
@@ -47,7 +69,6 @@ export class intern {
     const args = {
       table_name: ent_table,
       data: escapeIdentifier,
-      id: q
     }
 
     const query = Q.update(args)
@@ -83,6 +104,29 @@ export class intern {
     const canon = ent.canon$({ object: true })
 
     return (canon.base ? canon.base + '_' : '') + canon.name
+  }
+
+  static makeentp(ent: any) {
+    const fields = ent.fields$()
+    const entp: any = {}
+
+    for (const field of fields) {
+      if (!intern.isDate(ent[field]) && intern.isObject(ent[field])) {
+        entp[field] = JSON.stringify(ent[field])
+      } else {
+        entp[field] = ent[field]
+      }
+    }
+
+    return entp
+  }
+
+  static isObject(x: any) {
+    return null != x && '[object Object]' === toString.call(x)
+  }
+
+  static isDate(x: any) {
+    return '[object Date]' === toString.call(x)
   }
 
   static async isNew(ent: any) {
@@ -129,8 +173,8 @@ export class intern {
   }
 
   static buildCtx(seneca: any, msg: any, meta: any) {
-    const transaction = seneca.fixedmeta?.custom?.sys__entity?.transaction
-    let ctx = null
+    let ctx = {}
+    let transaction = seneca.fixedmeta?.custom?.sys__entity?.transaction
 
     if(transaction && false !== msg.transaction$) {
       transaction.trace.push({
@@ -140,12 +184,57 @@ export class intern {
       })
       
       ctx = {
-        transaction,
+        transaction: transaction,
         client: transaction.client,
       }
     }
-    
+
     return ctx
+  }
+
+  static msgForGenerateId(args: any) {
+    const { role, target } = args
+    return { role, target, hook: 'generate_id' }
+  }
+
+  static generateId() {
+    const uuidV4 = Uuid()
+    console.log('uuidV4', uuidV4)
+    return uuidV4
+  }
+
+  static async withDbClient(dbPool: any, ctx: any, f: any) {
+    ctx = ctx || {}
+    
+    let isTransaction = !!ctx.transaction
+    
+    ctx.client = ctx.client || await dbPool.connect()
+
+    if(isTransaction) {
+      if(null == ctx.transaction.client) {
+        ctx.transaction.client = ctx.client
+        await ctx.client.query('BEGIN')
+      }
+    }
+
+    let result
+
+    try {
+      result = await f(ctx.client)
+    }
+    catch(e) {
+      if(isTransaction) {
+	await ctx.client.query('ROLLBACK')
+      }
+      throw e
+    }
+    finally {
+      if(!isTransaction) {
+	ctx.client.release()
+      }
+    }
+
+    return result
   }
 
 }
