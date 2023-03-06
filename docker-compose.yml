@@ -1,7 +1,7 @@
 postgres:
   build: ./test/config/docker
   ports:
-    - "5432:5432"
+    - "5433:5432"
   environment:
     POSTGRES_PASSWORD: senecatest_0102
     POSTGRES_DB: senecatest_knex
