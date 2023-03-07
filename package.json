@@ -16,7 +16,7 @@
     "Paolo Chiodi (https://github.com/paolochiodi)",
     "Shane Lacey (https://github.com/shanel262)",
     "Oisín Hennessy (https://github.com/code-jace)",
-    "Efim Bogdanovsky (https://github.com/lilsweetcaligula)"
+    "Jose Perigolo (https://github.com/Jose-Perigolo)"
   ],
   "scripts": {
     "build": "docker-compose build",
@@ -46,10 +46,10 @@
   "peerDependencies": {
     "seneca": ">=3",
     "seneca-entity": ">=18",
-    "knex": ">=2.4.2",
-    "pg": ">=8.8.0"
+    "knex": ">=2.4.2"
   },
   "devDependencies": {
+    "pg": ">=8.8.0",
     "@hapi/code": "9.0.1",
     "@hapi/lab": "25.0.1",
     "async": "3.2.4",
