@@ -20,12 +20,11 @@ export class intern {
     }
   }
 
-  static async findKnex(ent: any, q: any): Promise<any> {
+  static async findKnex(ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
-      table_name: ent_table,
-      id: q
+      table_name: ent_table
     }
 
     const query = Q.select(args)
@@ -49,15 +48,12 @@ export class intern {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
-    console.log('entp', entp)
-
     const args = {
       table_name: ent_table,
       data: {...entp, id: Uuid()},
     }
 
     const query = Q.insert(args)
-    console.log('query', query)
     return query
   }
 
@@ -130,8 +126,7 @@ export class intern {
   }
 
   static async isNew(ent: any) {
-    const isNew = await intern.findKnex(ent, ent.id)
-
+    const isNew = await intern.firstKnex(ent, ent.id)
     if (isNew) {
       return true
     }
@@ -172,6 +167,9 @@ export class intern {
     return conf
   }
 
+  /*
+  * NOTE - KEEP - TX SUPPORT WILL COME FOR THE NEXT VERSION
+  */
   static buildCtx(seneca: any, msg: any, meta: any) {
     let ctx = {}
     let transaction = seneca.fixedmeta?.custom?.sys__entity?.transaction
@@ -199,10 +197,10 @@ export class intern {
 
   static generateId() {
     const uuidV4 = Uuid()
-    console.log('uuidV4', uuidV4)
     return uuidV4
   }
 
+  // KEEP! TX SUPPORT WILL COME FOR THE NEXT VERSION
   static async withDbClient(dbPool: any, ctx: any, f: any) {
     ctx = ctx || {}
     
@@ -235,6 +233,35 @@ export class intern {
     }
 
     return result
+  }
+
+  static makeent(ent: any, row: any) {
+    if (!row) {
+      return null
+    }
+
+    const fields = Object.keys(row)
+    const entp: any = {}
+
+    for (const field of fields) {
+      let value = row[field]
+
+      try {
+        const parsed = JSON.parse(row[field])
+
+        if (intern.isObject(parsed)) {
+          value = parsed
+        }
+      } catch (err) {
+        if (!(err instanceof SyntaxError)) {
+          throw err
+        }
+      }
+
+      entp[field] = value
+    }
+
+    return ent.make$(entp)
   }
 
 }
