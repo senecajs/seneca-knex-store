@@ -46,24 +46,21 @@ function knex_store(this: any, options: Options) {
 
     save: asyncMethod(async function (this: any, msg: any, meta: any){
       const seneca = this
-
+  
       const ctx = intern.buildCtx(seneca, msg, meta)
       
       return intern.withDbClient(dbPool, ctx, async (client: any) => {
           const ctx = { seneca, client }
-          const { ent, q } = msg
-          const { auto_increment$: autoIncrement = false } = q
-
+          const { ent } = msg
 
           // check if we are in create mode,
           // if we are do a create, otherwise
           // we will do a save instead
           // Check async if the entity is new or not
           const is_new = await intern.isNew(ent)
-          console.log('is_new',is_new)
 
-          // return is_new ? do_create() : do_save()
-        return do_create()
+          return is_new ? do_save() : do_create()
+          
           // Create a new entity
           async function do_create() {
             // generate a new id for the entity
@@ -72,25 +69,21 @@ function knex_store(this: any, options: Options) {
             // create a new entity
             try {
             const newEnt = ent.clone$()
-            console.log('newEnt', newEnt)
 
             const insertTest = intern.insertKnex(newEnt, ctx)
-            console.log(insertTest)
 
             return insertTest
 
             } catch (err) {
-              console.log(err)
               return err
             }
           }
 
           // Save an existing entity  
-          function do_save() {
-            const doSave = intern.updateKnex(ent, ctx)
+          async function do_save() {
+            const doSave = await intern.updateKnex(ent, ctx)
             // call the reply callback with the
             // updated entity
-            console.log(doSave)
             return doSave
           }
         })
@@ -100,25 +93,20 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const list = await intern.findKnex(
-        qent,
-        q)
-      reply(null, list[0])
+      const load = await intern.firstKnex(qent, q.id)
+      reply(null, load[0])
     },
 
     list: async function (msg: any, reply: any) {
-      let qent = msg.qent
-      let q = msg.q || {}
+      const qent = msg.qent
 
-      const list = await intern.findKnex(
-        qent,
-        q)
+      const list = await intern.findKnex(qent)
       reply(null, list)
     },
 
     remove: async function (this: any, msg: any, reply: any) {
-      let qent = msg.qent
-      let q = msg.q || {}
+      const qent = msg.qent
+      const q = msg.q || {}
 
       const list = await intern.removeKnex(
         qent,
@@ -145,7 +133,7 @@ function knex_store(this: any, options: Options) {
 
   seneca.add(intern.msgForGenerateId({ role: 'sql', target: STORE_NAME }),
   function (_msg: any, done: any) {
-    const id = intern.generateId()
+    let id = intern.generateId()
     return done(null, { id })
   })
 
