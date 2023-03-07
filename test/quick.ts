@@ -45,14 +45,11 @@ const DbConfig = require('./config/database/config')
     console.log(foo1)
   }
 
-  awaitSeneca().then(() => {
-    quickSave().then(() => {
-      quickList().then(() => {
-        quickUpdate().then(() => {
-          quickRemove().then(() => {
-            console.log('done')
-          })
-        })
-      })
-    })
-  })
+  (async () => {
+    await awaitSeneca()
+    await quickSave()
+    await quickList()
+    await quickUpdate()
+    await quickRemove()
+    console.log('done')
+  })()
