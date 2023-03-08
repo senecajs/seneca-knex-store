@@ -21,7 +21,7 @@ function knex_store(this: any, options: Options) {
   let dbPool: {
     end: any ,
     connect: () => Promise<any> 
-}
+  }
 
   function configure(spec: any, done: any) {
     const conf = intern.getConfig(spec)
@@ -46,39 +46,30 @@ function knex_store(this: any, options: Options) {
 
     save: asyncMethod(async function (this: any, msg: any, meta: any){
       const seneca = this
-  
+      
+      //Further implementation
+      // const ctx = {}
       const ctx = intern.buildCtx(seneca, msg, meta)
       
       return intern.withDbClient(dbPool, ctx, async (client: any) => {
           const ctx = { seneca, client }
           const { ent } = msg
 
-          // check if we are in create mode,
-          // if we are do a create, otherwise
-          // we will do a save instead
-          // Check async if the entity is new or not
-          const is_new = await intern.isNew(ent)
-
-          return is_new ? do_save() : do_create()
-          
           // Create a new entity
           async function do_create() {
-            // generate a new id for the entity
-            // const id = intern.generateId()
-
             // create a new entity
             try {
-            const newEnt = ent.clone$()
-
-            const insertTest = intern.insertKnex(newEnt, ctx)
-
-            return insertTest
-
+              const newEnt = ent.clone$()
+              
+              const insertTest = await intern.insertKnex(newEnt, ctx)
+              
+              return insertTest
+              
             } catch (err) {
               return err
             }
           }
-
+          
           // Save an existing entity  
           async function do_save() {
             const doSave = await intern.updateKnex(ent, ctx)
@@ -86,6 +77,9 @@ function knex_store(this: any, options: Options) {
             // updated entity
             return doSave
           }
+
+          return intern.isUpdate(msg) ? do_save() : do_create()
+
         })
     }),
 
@@ -138,7 +132,7 @@ function knex_store(this: any, options: Options) {
   })
 
 
-seneca.add('sys:entity,transaction:begin', (msg: any, reply: any) => {
+seneca.add('sys:entity,transaction:begin', function(this: any, msg: any, reply: any) {
   // NOTE: `BEGIN` is called in intern.withDbClient
   reply({
     handle: { id: this.util.Nid(), name: 'postgres' }

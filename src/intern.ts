@@ -32,14 +32,13 @@ export class intern {
 
   }
 
-  static async firstKnex(ent: any, q: any): Promise<any> {
+  static async firstKnex(ent: any, id: string): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
       table_name: ent_table,
-      id: q
+      id
     }
-
     const query = Q.first(args)
     return query
   }
@@ -54,7 +53,8 @@ export class intern {
     }
 
     const query = Q.insert(args)
-    return query
+    const result = query._single.insert
+    return result
   }
 
   static async updateKnex(ent: any, ctx: any): Promise<any> {
@@ -262,6 +262,11 @@ export class intern {
     }
 
     return ent.make$(entp)
+  }
+
+  static  isUpdate(msg: any) {
+    const { ent } = msg
+    return null != ent.id
   }
 
 }

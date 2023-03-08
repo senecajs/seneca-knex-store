@@ -6,7 +6,8 @@ const knex = require('knex')({
     user: 'senecatest',
     password: 'senecatest_0102',
     database: 'senecatest_knex',
-  }
+  },
+  // debug: true,
 })
 
 const Q = {
@@ -26,7 +27,7 @@ const Q = {
     return knex().select().from(args.table_name)
   },
   first(args: { table_name: string; id: string }) {
-    return knex(args.table_name).first().where(args.id)
+    return knex(args.table_name).where({id: args.id}).first()
   },
 }
 
