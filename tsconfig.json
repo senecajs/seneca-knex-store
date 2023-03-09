@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "module": "commonjs",
     "noEmitOnError": true,
     "outDir":"dist",

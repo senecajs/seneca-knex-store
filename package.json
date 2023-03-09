@@ -1,9 +1,9 @@
 {
-  "name": "seneca-mem-store",
+  "name": "@seneca/knex-store",
   "version": "7.0.1",
-  "description": "Seneca in-memory data storage plugin.",
-  "main": "dist/mem-store.js",
-  "types": "dist/mem-store.d.ts",
+  "description": "Seneca data storag plugin for Knex.",
+  "main": "dist/knex-store.js",
+  "types": "dist/knex-store.d.ts",
   "license": "MIT",
   "author": "Richard Rodger (http://richardrodger.com)",
   "contributors": [
@@ -16,15 +16,17 @@
     "Paolo Chiodi (https://github.com/paolochiodi)",
     "Shane Lacey (https://github.com/shanel262)",
     "Oisín Hennessy (https://github.com/code-jace)",
-    "Efim Bogdanovsky (https://github.com/lilsweetcaligula)"
+    "Jose Perigolo (https://github.com/Jose-Perigolo)"
   ],
   "scripts": {
-    "build": "tsc -d",
+    "build": "docker-compose build",
+    "start": "docker-compose up",
+    "stop": "docker-compose kill",
     "watch": "tsc -w -d",
     "test": "lab -v -P test -L -t 90 -r console -o stdout -r html -o test/coverage.html -r lcov -o test/lcov.info --sourcemaps --transform node_modules/lab-transform-typescript",
     "test-some": "lab -v -P test --sourcemaps --transform node_modules/lab-transform-typescript -g",
     "prettier": "prettier --write --no-semi --single-quote src/**/*.ts test/*.js",
-    "reset": "npm run clean && npm i && npm run build && npm test",
+    "reset": "npm run clean && npm i && npm test",
     "clean": "rm -rf node_modules dist package-lock.json yarn.lock",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"` && echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION && git push && git tag v$REPO_VERSION && git push --tags;",
     "repo-publish": "npm run clean && npm i --registry=http://registry.npmjs.org && npm run repo-publish-quick",
@@ -32,20 +34,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/senecajs/seneca-mem-store"
+    "url": "https://github.com/senecajs/seneca-knex-store"
   },
   "keywords": [
     "seneca",
     "plugin",
     "store",
-    "mem",
-    "memory"
+    "knex",
+    "knexjs"
   ],
   "peerDependencies": {
     "seneca": ">=3",
-    "seneca-entity": ">=18"
+    "seneca-entity": ">=18",
+    "knex": ">=2.4.2"
   },
   "devDependencies": {
+    "pg": ">=8.8.0",
     "@hapi/code": "9.0.1",
     "@hapi/lab": "25.0.1",
     "async": "3.2.4",

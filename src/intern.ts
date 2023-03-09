@@ -1,219 +1,291 @@
+import Q from './qbuilder'
+const Uuid = require('uuid').v4
+const Assert = require('assert')
+
+
 export class intern {
-  static is_new(ent: any): boolean {
-    // NOTE: This function is intended for use by the #save method. This
-    // function returns true when the entity argument is assumed to not yet
-    // exist in the store.
-    //
-    // In terms of code, if client code looks like so:
-    // ```
-    //   seneca.make('product')
-    //     .data$({ label, price })
-    //     .save$(done)
-    // ```
-    //
-    // - `is_new` will be invoked from the #save method and return
-    // true, because the product entity is yet to be saved.
-    //
-    // The following client code will cause `is_new` to return false,
-    // when invoked from the #save method, because the user entity already
-    // exists:
-    // ```
-    //   seneca.make('user')
-    //     .load$(user_id, (err, user) => {
-    //       if (err) return done(err)
-    //
-    //       return user
-    //         .data$({ email, username })
-    //         .save$(done)
-    //     })
-    // ```
-    //
-    return null != ent && null == ent.id
+
+  static asyncMethod(f: any) {
+    return function(this: any, msg: any, done: any, meta: any) {
+      const seneca = this
+      const p = f.call(seneca, msg, meta)
+
+      Assert('function' === typeof p.then &&
+      'function' === typeof p.catch,
+      'The function must be async, i.e. return a promise.')
+
+      return p
+        .then((result: any) => done(null, result))
+        .catch(done)
+    }
   }
 
-  static is_upsert(msg: any): boolean {
-    const { ent, q } = msg
-    return intern.is_new(ent) && q && Array.isArray(q.upsert$)
-  }
+  static async findKnex(ent: any): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
 
-  static find_mement(entmap: any, base_ent: any, filter: any): any {
-    const { base, name } = base_ent.canon$({ object: true })
-    const entset = entmap[base] && entmap[base][name]
-
-    if (null == entset) {
-      return null
+    const args = {
+      table_name: ent_table
     }
 
-    let out = null
+    const query = await Q.select(args)
+    return query
 
-    for (const ent_id in entset) {
-      const mement = entset[ent_id]
+  }
 
-      if (matches(mement, filter)) {
-        out = mement
-        break
+  static async firstKnex(ent: any, id: string): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
+
+    const args = {
+      table_name: ent_table,
+      id
+    }
+    const query = await Q.first(args)
+    return query
+  }
+
+  static async insertKnex(ent: any, data: any): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
+
+    const args = {
+      table_name: ent_table,
+      data: {...entp, id: Uuid()},
+    }
+
+    const query = await Q.insert(args)
+    return query
+  }
+
+  static async updateKnex(ent: any, data: any): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
+
+    const { id, ...rest } = entp
+
+    const args = {
+      table_name: ent_table,
+      data: rest,
+      id: id
+    }
+
+    const query = await Q.update(args)
+    return query
+  }
+
+  static async removeKnex(ent: any, q: any): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
+
+    const args = {
+      table_name: ent_table,
+      id: entp.id
+    }
+
+    const query = await Q.delete(args)
+    //Knex returns 1 if delete is ok
+    const queryObject = query == 1 ? {delete: true} : {delete: false}
+    return queryObject
+  }
+
+  static async upsertKnex(ent: any, data: any, q: any): Promise<any> {
+    const ent_table = intern.tablenameUtil(ent)
+
+    const args = {
+      table_name: ent_table,
+      data: data,
+      id: q
+    }
+
+    const query = Q.upsert(args)
+    return query
+  }
+
+  static tablenameUtil(ent: any) {
+    const canon = ent.canon$({ object: true })
+
+    return (canon.base ? canon.base + '_' : '') + canon.name
+  }
+
+  static makeentp(ent: any) {
+    const fields = ent.fields$()
+    const entp: any = {}
+
+    for (const field of fields) {
+      if (!intern.isDate(ent[field]) && intern.isObject(ent[field])) {
+        entp[field] = JSON.stringify(ent[field])
+      } else {
+        entp[field] = ent[field]
       }
     }
 
-    return out
-
-    function matches(ent: any, filter: any): boolean {
-      for (const fp in filter) {
-        if (fp in ent && filter[fp] === ent[fp]) {
-          continue
-        }
-
-        return false
-      }
-
-      return true
-    }
+    return entp
   }
 
-  static update_mement(
-    entmap: any,
-    base_ent: any,
-    filter: any,
-    new_attrs: any
-  ) {
-    const ent_to_update = intern.find_mement(entmap, base_ent, filter)
-
-    if (ent_to_update) {
-      Object.assign(ent_to_update, new_attrs)
-      return ent_to_update
-    }
-
-    return null
+  static isObject(x: any) {
+    return null != x && '[object Object]' === toString.call(x)
   }
 
-  static should_merge(ent: any, plugin_opts: any): boolean {
-    return !(false === plugin_opts.merge || false === ent.merge$)
-  }
-
-  // NOTE: Seneca supports a reasonable set of features
-  // in terms of listing. This function can handle
-  // sorting, skiping, limiting and general retrieval.
-  //
-  static listents(seneca: any, entmap: any, qent: any, q: any, done: any) {
-    let list = []
-
-    let canon = qent.canon$({ object: true })
-    let base = canon.base
-    let name = canon.name
-
-    let entset = entmap[base] ? entmap[base][name] : null
-    let ent
-
-    if (null != entset && null != q) {
-      if ('string' == typeof q) {
-        ent = entset[q]
-        if (ent) {
-          list.push(ent)
-        }
-      } else if (Array.isArray(q)) {
-        q.forEach(function (id) {
-          let ent = entset[id]
-          if (ent) {
-            ent = qent.make$(ent)
-            list.push(ent)
-          }
-        })
-      } else if ('object' === typeof q) {
-        let entids = Object.keys(entset)
-        next_ent: for (let id of entids) {
-          ent = entset[id]
-          for (let p in q) {
-            let qv = q[p] // query val
-            let ev = ent[p] // ent val
-
-            if (-1 === p.indexOf('$')) {
-              if (Array.isArray(qv)) {
-                if (-1 === qv.indexOf(ev)) {
-                  continue next_ent
-                }
-              } else if (intern.is_object(qv)) {
-                // mongo style constraints
-                if (
-                  (null != qv.$ne && qv.$ne == ev) ||
-                  (null != qv.$gte && qv.$gte > ev) ||
-                  (null != qv.$gt && qv.$gt >= ev) ||
-                  (null != qv.$lt && qv.$lt <= ev) ||
-                  (null != qv.$lte && qv.$lte < ev) ||
-                  (null != qv.$in && -1 === qv.$in.indexOf(ev)) ||
-                  (null != qv.$nin && -1 !== qv.$nin.indexOf(ev)) ||
-                  false
-                ) {
-                  continue next_ent
-                }
-              } else {
-                if (intern.is_date(qv)) {
-                  if (!(intern.is_date(ev) && intern.eq_dates(qv, ev))) {
-                    continue next_ent
-                  }
-                } else if (qv !== ev) {
-                  continue next_ent
-                }
-              }
-            }
-          }
-          ent = qent.make$(ent)
-          list.push(ent)
-        }
-      }
-    }
-
-    // Always sort first, this is the 'expected' behaviour.
-    if (null != q && q.sort$) {
-      let sf: any
-      for (sf in q.sort$) {
-        break
-      }
-
-      let sd = q.sort$[sf] < 0 ? -1 : 1
-      list = list.sort(function (a, b) {
-        return sd * (a[sf] < b[sf] ? -1 : a[sf] === b[sf] ? 0 : 1)
-      })
-    }
-
-    // Skip before limiting.
-    if (null != q && q.skip$ && q.skip$ > 0) {
-      list = list.slice(q.skip$)
-    }
-
-    // Limited the possibly sorted and skipped list.
-    if (null != q && q.limit$ && q.limit$ >= 0) {
-      list = list.slice(0, q.limit$)
-    }
-
-    // Prune fields
-    if (null != q && q.fields$) {
-      for (let i = 0; i < list.length; i++) {
-        let entfields = list[i].fields$()
-        for (let j = 0; j < entfields.length; j++) {
-          if ('id' !== entfields[j] && -1 == q.fields$.indexOf(entfields[j])) {
-            delete list[i][entfields[j]]
-          }
-        }
-      }
-    }
-
-    // Return the resulting list to the caller.
-    done.call(seneca, null, list)
-  }
-
-  static clean_array(ary: string[]): string[] {
-    return ary.filter((prop: string) => !prop.includes('$'))
-  }
-
-  static is_object(x: any): boolean {
-    return '[object Object]' === toString.call(x)
-  }
-
-  static is_date(x: any): boolean {
+  static isDate(x: any) {
     return '[object Date]' === toString.call(x)
   }
 
-  static eq_dates(lv: Date, rv: Date): boolean {
-    return lv.getTime() === rv.getTime()
+  static async isNew(ent: any) {
+    const isNew = await intern.firstKnex(ent, ent.id)
+    if (isNew) {
+      return true
+    }
+
+    return false
   }
+
+  static getConfig(spec: any) {
+    let conf
+
+    if ('string' === typeof spec) {
+      const urlM = /^postgres:\/\/((.*?):(.*?)@)?(.*?)(:?(\d+))?\/(.*?)$/.exec(spec)
+
+      if (!urlM)
+      {
+        return null
+      }
+      conf = {
+        name: urlM[7],
+        host: urlM[4],
+        username: urlM[2],
+        password: urlM[3],
+        port: urlM[6] ? parseInt(urlM[6], 10) : null,
+      }
+
+    } else {
+      conf = spec
+    }
+
+    // pg conf properties
+    conf.user = conf.username
+    conf.database = conf.name
+
+    conf.host = conf.host || conf.server
+    conf.username = conf.username || conf.user
+    conf.password = conf.password || conf.pass
+
+    return conf
+  }
+
+  /*
+  * NOTE - KEEP - TX SUPPORT WILL COME FOR THE NEXT VERSION
+  */
+  static buildCtx(seneca: any, msg: any, meta: any) {
+    let ctx = {}
+    let transaction = seneca.fixedmeta?.custom?.sys__entity?.transaction
+
+    if(transaction && false !== msg.transaction$) {
+      transaction.trace.push({
+        when: Date.now(),
+        msg,
+        meta,
+      })
+      
+      ctx = {
+        transaction: transaction,
+        client: transaction.client,
+      }
+    }
+
+    return ctx
+  }
+
+  static msgForGenerateId(args: any) {
+    const { role, target } = args
+    return { role, target, hook: 'generate_id' }
+  }
+
+  static generateId() {
+    const uuidV4 = Uuid()
+    return uuidV4
+  }
+
+  // KEEP! TX SUPPORT WILL COME FOR THE NEXT VERSION
+  static async withDbClient(dbPool: any, ctx: any, f: any) {
+    ctx = ctx || {}
+    
+    let isTransaction = !!ctx.transaction
+    
+    ctx.client = ctx.client || await dbPool.connect()
+
+    if(isTransaction) {
+      if(null == ctx.transaction.client) {
+        ctx.transaction.client = ctx.client
+        await ctx.client.query('BEGIN')
+      }
+    }
+
+    let result
+
+    try {
+      result = await f(ctx.client)
+    }
+    catch(e) {
+      if(isTransaction) {
+	await ctx.client.query('ROLLBACK')
+      }
+      throw e
+    }
+    finally {
+      if(!isTransaction) {
+	ctx.client.release()
+      }
+    }
+
+    return result
+  }
+
+  static makeent(ent: any, row: any) {
+    if (!row) {
+      return null
+    }
+
+    const fields = Object.keys(row)
+    const entp: any = {}
+
+    for (const field of fields) {
+      let value = row[field]
+
+      try {
+        const parsed = JSON.parse(row[field])
+
+        if (intern.isObject(parsed)) {
+          value = parsed
+        }
+      } catch (err) {
+        if (!(err instanceof SyntaxError)) {
+          throw err
+        }
+      }
+
+      entp[field] = value
+    }
+
+    return ent.make$(entp)
+  }
+
+  static isUpdate(msg: any) {
+    const { ent } = msg
+    return !!ent.id
+  }
+
+  static async execQuery(query: any, ctx: any) {
+    const { client, seneca } = ctx
+
+    if (!query) {
+      const err = new Error('An empty query is not a valid query')
+      return seneca.fail(err)
+    }
+
+    return client.query(query)
+  }
+
+  static identity(x: any) {
+    return x
+  }
+
 }
