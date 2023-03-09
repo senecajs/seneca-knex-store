@@ -27,7 +27,7 @@ export class intern {
       table_name: ent_table
     }
 
-    const query = Q.select(args)
+    const query = await Q.select(args)
     return query
 
   }
@@ -39,7 +39,7 @@ export class intern {
       table_name: ent_table,
       id
     }
-    const query = Q.first(args)
+    const query = await Q.first(args)
     return query
   }
 
@@ -52,35 +52,39 @@ export class intern {
       data: {...entp, id: Uuid()},
     }
 
-    const query = Q.insert(args)
-    const result = query._single.insert
-    return result
+    const query = await Q.insert(args)
+    return query
   }
 
-  static async updateKnex(ent: any, ctx: any): Promise<any> {
-    const { client } = ctx
-    const escapeIdentifier = client.escapeIdentifier.bind(client)
+  static async updateKnex(ent: any, data: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
+
+    const { id, ...rest } = entp
 
     const args = {
       table_name: ent_table,
-      data: escapeIdentifier,
+      data: rest,
+      id: id
     }
 
-    const query = Q.update(args)
+    const query = await Q.update(args)
     return query
   }
 
   static async removeKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
 
     const args = {
       table_name: ent_table,
-      id: q
+      id: entp.id
     }
 
-    const query = Q.delete(args)
-    return query
+    const query = await Q.delete(args)
+    //Knex returns 1 if delete is ok
+    const queryObject = query == 1 ? {delete: true} : {delete: false}
+    return queryObject
   }
 
   static async upsertKnex(ent: any, data: any, q: any): Promise<any> {
@@ -264,9 +268,24 @@ export class intern {
     return ent.make$(entp)
   }
 
-  static  isUpdate(msg: any) {
+  static isUpdate(msg: any) {
     const { ent } = msg
-    return null != ent.id
+    return !!ent.id
+  }
+
+  static async execQuery(query: any, ctx: any) {
+    const { client, seneca } = ctx
+
+    if (!query) {
+      const err = new Error('An empty query is not a valid query')
+      return seneca.fail(err)
+    }
+
+    return client.query(query)
+  }
+
+  static identity(x: any) {
+    return x
   }
 
 }

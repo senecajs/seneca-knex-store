@@ -88,7 +88,7 @@ function knex_store(this: any, options: Options) {
       const q = msg.q || {}
 
       const load = await intern.firstKnex(qent, q.id)
-      reply(null, load[0])
+      reply(null, load)
     },
 
     list: async function (msg: any, reply: any) {
@@ -102,10 +102,10 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const list = await intern.removeKnex(
+      const remove = await intern.removeKnex(
         qent,
         q)
-      reply(null, list)
+      reply(null, remove)
     },
 
     native: function (_msg: any, done: any) {

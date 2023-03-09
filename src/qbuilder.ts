@@ -14,17 +14,17 @@ const Q = {
   upsert(args: { table_name: string; data: any; id: string }) {
     return knex(args.table_name).upsert(args.data, args.id)
   },
-  update(args: { table_name: string; data: any }) {
-    return knex(args.table_name).update(args.data).where(args.data.id)
+  update(args: { table_name: string; data: any, id: string }) {
+    return knex(args.table_name).where({id: args.id}).update(args.data).returning('*')
   },
   insert(args: { table_name: string; data: any }) {
-    return knex(args.table_name).insert(args.data)
+    return knex(args.table_name).insert(args.data).returning('*')
   },
   delete(args: { table_name: string; id: string }) {
-    return knex(args.table_name).delete().where(args.id)
+    return knex(args.table_name).where({id: args.id}).del()
   },
   select(args: { table_name: string}) {
-    return knex().select().from(args.table_name)
+    return knex.select('*').from(args.table_name)
   },
   first(args: { table_name: string; id: string }) {
     return knex(args.table_name).where({id: args.id}).first()
