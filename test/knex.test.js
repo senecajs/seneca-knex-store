@@ -13,7 +13,7 @@ describe('shared tests', () => {
   const senecaForTest = makeSenecaForTest()
 
   before(() => {
-    return new Promise((done) => {
+    return new Promise(done => {
       senecaForTest.ready(done)
     })
   })
@@ -21,11 +21,38 @@ describe('shared tests', () => {
   describe('basic tests', () => {
     Shared.basictest({
       seneca: senecaForTest,
-      senecaMerge: makeSenecaForTest({ postgres_opts: { merge: false } }),
+      senecaMerge: makeSenecaForTest(),
       script: lab
     })
   })
 
+  describe('sort tests', () => {
+    Shared.sorttest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+
+  describe('limit tests', () => {
+    Shared.limitstest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+
+  describe('sql tests', () => {
+    Shared.sqltest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+
+  describe('upsert tests', () => {
+    Shared.upserttest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
 })
 
 describe('knex-store tests', function () {
