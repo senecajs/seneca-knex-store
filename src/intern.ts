@@ -49,7 +49,7 @@ export class intern {
 
     const args = {
       table_name: ent_table,
-      data: {...entp, id: Uuid()},
+      data: {...entp, id: entp.id ? entp.id : Uuid()},
     }
 
     const query = await Q.insert(args)
