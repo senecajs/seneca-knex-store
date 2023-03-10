@@ -81,6 +81,13 @@ export class intern {
       id: entp.id
     }
 
+    if (q.all$) {
+      const query = Q.truncate(args)
+      //Knex returns 1 if delete is ok
+      const queryObject = query == 1 ? {delete: true} : {delete: false}
+      return queryObject
+    }
+
     const query = await Q.delete(args)
     //Knex returns 1 if delete is ok
     const queryObject = query == 1 ? {delete: true} : {delete: false}

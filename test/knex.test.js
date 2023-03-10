@@ -111,6 +111,13 @@ describe('knex-store tests', function () {
 
     expect(del.delete).to.equal(true)
   })
+
+  it('removeAll', async () => {
+    const s0 = await senecaForTest.entity.begin()
+    const del = await s0.entity('foo').data$({id: idTest }).remove$()
+
+    expect(del.delete).to.equal(true)
+  })
 })
 
 function makeSenecaForTest() {

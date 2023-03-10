@@ -23,6 +23,9 @@ const Q = {
   delete(args: { table_name: string; id: string }) {
     return knex(args.table_name).where({id: args.id}).del()
   },
+  truncate(args: { table_name: string }) {
+    return knex(args.table_name).truncate()
+  },
   select(args: { table_name: string}) {
     return knex.select('*').from(args.table_name)
   },

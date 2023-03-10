@@ -132,24 +132,30 @@ function knex_store(this: any, options: Options) {
   })
 
 
-seneca.add('sys:entity,transaction:begin', function(this: any, msg: any, reply: any) {
-  // NOTE: `BEGIN` is called in intern.withDbClient
-  reply({
-    handle: { id: this.util.Nid(), name: 'postgres' }
-  })
-})
-
-seneca.add('sys:entity,transaction:end', function(msg: any, reply: any) {
-  let transaction = msg.details()
-  let client = transaction.client
-  client.query('COMMIT')
-    .then(()=>{
-      reply({
-        done: true
-      })
+  seneca.add('sys:entity,transaction:begin', function(this: any, msg: any, reply: any) {
+    // NOTE: `BEGIN` is called in intern.withDbClient
+    reply({
+      handle: { id: this.util.Nid(), name: 'postgres' }
     })
-    .catch((err: any)=>reply(err))
-})
+  })
+
+  seneca.add('sys:entity,transaction:end', function(msg: any, reply: any) {
+    let transaction = msg.details()
+    let client = transaction.client
+    client.query('COMMIT')
+      .then(()=>{
+        reply({
+          done: true
+        })
+      })
+      .catch((err: any)=>reply(err))
+  })
+
+  // let dbref: any = null
+
+  // seneca.add({ init: store.name, tag: meta.tag }, function (_msg: any, done: any) {
+  //   configure.call(this, options).then((result: any)=>{ dbref=result; done(result) })
+  // })
 
 seneca.add('sys:entity,transaction:rollback', function(msg: any, reply: any) {
   let transaction = msg.details()
