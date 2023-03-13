@@ -19,22 +19,25 @@ class intern {
                 .catch(done);
         };
     }
-    static async findKnex(ent) {
+    static async findKnex(ent, q) {
         const ent_table = intern.tablenameUtil(ent);
+        const entp = intern.makeentp(ent);
         const args = {
-            table_name: ent_table
+            table_name: ent_table,
+            data: intern.isObjectEmpty(q) ? false : entp
         };
         const query = await qbuilder_1.default.select(args);
-        return query;
+        return query.map((row) => intern.makeent(ent, row));
     }
-    static async firstKnex(ent, id) {
+    static async firstKnex(ent, q) {
         const ent_table = intern.tablenameUtil(ent);
         const args = {
             table_name: ent_table,
-            id
+            filter: q
         };
         const query = await qbuilder_1.default.first(args);
-        return query;
+        // return query
+        return intern.makeent(ent, query);
     }
     static async insertKnex(ent, data) {
         const ent_table = intern.tablenameUtil(ent);
@@ -44,7 +47,8 @@ class intern {
             data: { ...entp, id: entp.id ? entp.id : Uuid() },
         };
         const query = await qbuilder_1.default.insert(args);
-        return query;
+        const formattedQuery = query.length == 1 ? query[0] : query;
+        return intern.makeent(ent, formattedQuery);
     }
     static async updateKnex(ent, data) {
         const ent_table = intern.tablenameUtil(ent);
@@ -56,7 +60,9 @@ class intern {
             id: id
         };
         const query = await qbuilder_1.default.update(args);
-        return query;
+        const formattedQuery = query.length == 1 ? query[0] : query;
+        // return query
+        return intern.makeent(ent, formattedQuery);
     }
     static async removeKnex(ent, q) {
         const ent_table = intern.tablenameUtil(ent);
@@ -66,7 +72,7 @@ class intern {
             id: entp.id
         };
         if (q.all$) {
-            const query = qbuilder_1.default.truncate(args);
+            const query = await qbuilder_1.default.truncate(args);
             //Knex returns 1 if delete is ok
             const queryObject = query == 1 ? { delete: true } : { delete: false };
             return queryObject;
@@ -106,15 +112,11 @@ class intern {
     static isObject(x) {
         return null != x && '[object Object]' === toString.call(x);
     }
+    static isObjectEmpty(object) {
+        return Object.keys(object).length === 0;
+    }
     static isDate(x) {
         return '[object Date]' === toString.call(x);
-    }
-    static async isNew(ent) {
-        const isNew = await intern.firstKnex(ent, ent.id);
-        if (isNew) {
-            return true;
-        }
-        return false;
     }
     static getConfig(spec) {
         let conf;
@@ -221,9 +223,16 @@ class intern {
         }
         return ent.make$(entp);
     }
-    static isUpdate(msg) {
-        const { ent } = msg;
-        return !!ent.id;
+    static async isUpdate(ent) {
+        if (!ent.id) {
+            return false;
+        }
+        const id = {
+            id: ent.id
+        };
+        const rowExist = await intern.firstKnex(ent, id);
+        const isUpdate = rowExist ? true : false;
+        return isUpdate;
     }
     static async execQuery(query, ctx) {
         const { client, seneca } = ctx;
@@ -233,7 +242,17 @@ class intern {
         }
         return client.query(query);
     }
-    static identity(x) {
+    static deepXformKeys(f, x) {
+        if (Array.isArray(x)) {
+            return x.map((y) => intern.deepXformKeys(f, y));
+        }
+        if (intern.isObject(x)) {
+            const out = {};
+            for (const k in x) {
+                out[f(k)] = intern.deepXformKeys(f, x[k]);
+            }
+            return out;
+        }
         return x;
     }
 }

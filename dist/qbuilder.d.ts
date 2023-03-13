@@ -22,10 +22,11 @@ declare const Q: {
     }): any;
     select(args: {
         table_name: string;
+        data: any;
     }): any;
     first(args: {
         table_name: string;
-        id: string;
+        filter: any;
     }): any;
 };
 export default Q;

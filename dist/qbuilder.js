@@ -16,7 +16,10 @@ const Q = {
         return knex(args.table_name).upsert(args.data, args.id);
     },
     update(args) {
-        return knex(args.table_name).where({ id: args.id }).update(args.data).returning('*');
+        return knex(args.table_name)
+            .where({ id: args.id })
+            .update(args.data)
+            .returning('*');
     },
     insert(args) {
         return knex(args.table_name).insert(args.data).returning('*');
@@ -28,10 +31,12 @@ const Q = {
         return knex(args.table_name).truncate();
     },
     select(args) {
-        return knex.select('*').from(args.table_name);
+        return args.data
+            ? knex(args.table_name).select().where(args.data)
+            : knex.select('*').from(args.table_name);
     },
     first(args) {
-        return knex(args.table_name).where({ id: args.id }).first();
+        return knex(args.table_name).where(args.filter).first();
     },
 };
 exports.default = Q;

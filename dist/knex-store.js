@@ -42,8 +42,8 @@ function knex_store(options) {
                         if (ent.id$) {
                             newEnt.id = ent.id$;
                         }
-                        const insertTest = await intern_1.intern.insertKnex(newEnt, ctx);
-                        return insertTest;
+                        const doCreate = await intern_1.intern.insertKnex(newEnt, ctx);
+                        return doCreate;
                     }
                     catch (err) {
                         return err;
@@ -56,18 +56,20 @@ function knex_store(options) {
                     // updated entity
                     return doSave;
                 }
-                return intern_1.intern.isUpdate(msg) ? do_save() : do_create();
+                const save = await intern_1.intern.isUpdate(ent) ? do_save() : do_create();
+                return save;
             });
         }),
         load: async function (msg, reply) {
             const qent = msg.qent;
             const q = msg.q || {};
-            const load = await intern_1.intern.firstKnex(qent, q.id);
+            const load = await intern_1.intern.firstKnex(qent, q);
             reply(null, load);
         },
         list: async function (msg, reply) {
             const qent = msg.qent;
-            const list = await intern_1.intern.findKnex(qent);
+            const q = msg.q || {};
+            const list = await intern_1.intern.findKnex(qent, q);
             reply(null, list);
         },
         remove: async function (msg, reply) {
