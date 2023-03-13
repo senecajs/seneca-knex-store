@@ -100,7 +100,6 @@ function knex_store(this: any, options: Options) {
     list: async function (msg: any, reply: any) {
       const qent = msg.qent
       const q = msg.q || {}
-
       const list = await intern.findKnex(qent, q)
       reply(null, list)
     },
