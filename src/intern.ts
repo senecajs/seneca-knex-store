@@ -24,9 +24,14 @@ export class intern {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
+    const isQArray = Array.isArray(q)
+
+    const filter = intern.isObjectEmpty(q) ? {...entp} : isQArray ? q : {...q}
+
     const args = {
       table_name: ent_table,
-      data: intern.isObjectEmpty(q) ? false : entp
+      data: intern.isObjectEmpty(filter) ? false : filter,
+      isArray: isQArray
     }
     
     const query = await Q.select(args)
@@ -84,22 +89,31 @@ export class intern {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
+    const filter = intern.isObjectEmpty(q) ? {...entp} : {...q}
+
+    const isLoadDeleted = filter.load$ ? true : false
+
+    if (isLoadDeleted) {
+      delete filter.load$
+    }
+
     const args = {
       table_name: ent_table,
-      id: entp.id
+      filter,
+      isLoadDeleted
     }
-
+    
     if (q.all$) {
-      const query = await Q.truncate(args)
-      //Knex returns 1 if delete is ok
-      const queryObject = query == 1 ? {delete: true} : {delete: false}
-      return queryObject
+      await Q.truncate(args)
+      //Knex returns the number of rows affected if delete is ok
+      return null
     }
-
+    
     const query = await Q.delete(args)
-    //Knex returns 1 if delete is ok
-    const queryObject = query == 1 ? {delete: true} : {delete: false}
-    return queryObject
+    //Knex returns the number of rows affected if delete is ok
+    const result = typeof query == 'number' ? null : 'Error'
+    const formattedQuery = query.length == 1 ? query[0] : query
+    return isLoadDeleted ? intern.makeent(ent, formattedQuery) : result
   }
 
   static async upsertKnex(ent: any, data: any, q: any): Promise<any> {
