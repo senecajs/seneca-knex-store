@@ -20,27 +20,36 @@ export class intern {
     }
   }
 
-  static async findKnex(ent: any): Promise<any> {
+  static async findKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
+    const entp = intern.makeentp(ent)
+
+    const isQArray = Array.isArray(q)
+
+    const filter = intern.isObjectEmpty(q) ? {...entp} : isQArray ? q : {...q}
 
     const args = {
-      table_name: ent_table
+      table_name: ent_table,
+      data: intern.isObjectEmpty(filter) ? false : filter,
+      isArray: isQArray
     }
-
+    
     const query = await Q.select(args)
-    return query
+    return query.map((row: any) => intern.makeent(ent, row))
 
   }
 
-  static async firstKnex(ent: any, id: string): Promise<any> {
+  static async firstKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
       table_name: ent_table,
-      id
+      filter: q
     }
+
     const query = await Q.first(args)
-    return query
+    // return query
+    return intern.makeent(ent, query)
   }
 
   static async insertKnex(ent: any, data: any): Promise<any> {
@@ -49,11 +58,13 @@ export class intern {
 
     const args = {
       table_name: ent_table,
-      data: {...entp, id: Uuid()},
+      data: {...entp, id: entp.id ? entp.id : Uuid()},
     }
 
     const query = await Q.insert(args)
-    return query
+    const formattedQuery = query.length == 1 ? query[0] : query
+
+    return intern.makeent(ent, formattedQuery)
   }
 
   static async updateKnex(ent: any, data: any): Promise<any> {
@@ -69,22 +80,40 @@ export class intern {
     }
 
     const query = await Q.update(args)
-    return query
+    const formattedQuery = query.length == 1 ? query[0] : query
+    // return query
+    return intern.makeent(ent, formattedQuery)
   }
 
   static async removeKnex(ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
-    const args = {
-      table_name: ent_table,
-      id: entp.id
+    const filter = intern.isObjectEmpty(q) ? {...entp} : {...q}
+
+    const isLoadDeleted = filter.load$ ? true : false
+
+    if (isLoadDeleted) {
+      delete filter.load$
     }
 
+    const args = {
+      table_name: ent_table,
+      filter,
+      isLoadDeleted
+    }
+    
+    if (q.all$) {
+      await Q.truncate(args)
+      //Knex returns the number of rows affected if delete is ok
+      return null
+    }
+    
     const query = await Q.delete(args)
-    //Knex returns 1 if delete is ok
-    const queryObject = query == 1 ? {delete: true} : {delete: false}
-    return queryObject
+    //Knex returns the number of rows affected if delete is ok
+    const result = typeof query == 'number' ? null : 'Error'
+    const formattedQuery = query.length == 1 ? query[0] : query
+    return isLoadDeleted ? intern.makeent(ent, formattedQuery) : result
   }
 
   static async upsertKnex(ent: any, data: any, q: any): Promise<any> {
@@ -125,17 +154,12 @@ export class intern {
     return null != x && '[object Object]' === toString.call(x)
   }
 
-  static isDate(x: any) {
-    return '[object Date]' === toString.call(x)
+  static isObjectEmpty(object: any) {  
+    return Object.keys(object).length === 0
   }
 
-  static async isNew(ent: any) {
-    const isNew = await intern.firstKnex(ent, ent.id)
-    if (isNew) {
-      return true
-    }
-
-    return false
+  static isDate(x: any) {
+    return '[object Date]' === toString.call(x)
   }
 
   static getConfig(spec: any) {
@@ -268,9 +292,20 @@ export class intern {
     return ent.make$(entp)
   }
 
-  static isUpdate(msg: any) {
-    const { ent } = msg
-    return !!ent.id
+  static async isUpdate(ent: any) {
+
+    if (!ent.id) {
+      return false
+    }
+    
+    const id = {
+      id: ent.id
+    }
+
+    const rowExist = await intern.firstKnex(ent, id)
+    const isUpdate = rowExist ? true : false
+
+    return isUpdate
   }
 
   static async execQuery(query: any, ctx: any) {
@@ -284,7 +319,21 @@ export class intern {
     return client.query(query)
   }
 
-  static identity(x: any) {
+  static deepXformKeys(f: any, x: any) : any {
+    if (Array.isArray(x)) {
+      return x.map((y: any) => intern.deepXformKeys(f, y))
+    }
+
+    if (intern.isObject(x)) {
+      const out: any = {}
+
+      for (const k in x) {
+        out[f(k)] = intern.deepXformKeys(f, x[k])
+      }
+
+      return out
+    }
+
     return x
   }
 
