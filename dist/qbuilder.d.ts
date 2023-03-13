@@ -15,7 +15,8 @@ declare const Q: {
     }): any;
     delete(args: {
         table_name: string;
-        id: string;
+        filter: string;
+        isLoadDeleted: boolean;
     }): any;
     truncate(args: {
         table_name: string;
@@ -23,6 +24,7 @@ declare const Q: {
     select(args: {
         table_name: string;
         data: any;
+        isArray: boolean;
     }): any;
     first(args: {
         table_name: string;

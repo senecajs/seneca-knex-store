@@ -25,12 +25,18 @@ const Q = {
         return knex(args.table_name).insert(args.data).returning('*');
     },
     delete(args) {
-        return knex(args.table_name).where({ id: args.id }).del();
+        if (args.isLoadDeleted) {
+            return knex(args.table_name).where(args.filter).del().returning('*');
+        }
+        return knex(args.table_name).where(args.filter).del();
     },
     truncate(args) {
         return knex(args.table_name).truncate();
     },
     select(args) {
+        if (args.isArray) {
+            return knex(args.table_name).whereIn('id', args.data);
+        }
         return args.data
             ? knex(args.table_name).select().where(args.data)
             : knex.select('*').from(args.table_name);
