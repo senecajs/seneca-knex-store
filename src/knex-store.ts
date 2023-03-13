@@ -65,9 +65,9 @@ function knex_store(this: any, options: Options) {
                 newEnt.id = ent.id$
               }
               
-              const insertTest = await intern.insertKnex(newEnt, ctx)
+              const doCreate = await intern.insertKnex(newEnt, ctx)
               
-              return insertTest
+              return doCreate
               
             } catch (err) {
               return err
@@ -82,7 +82,9 @@ function knex_store(this: any, options: Options) {
             return doSave
           }
 
-          return intern.isUpdate(msg) ? do_save() : do_create()
+          const save = await intern.isUpdate(ent) ? do_save() : do_create()
+
+          return save
 
         })
     }),
@@ -91,14 +93,15 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const load = await intern.firstKnex(qent, q.id)
+      const load = await intern.firstKnex(qent, q)
       reply(null, load)
     },
 
     list: async function (msg: any, reply: any) {
       const qent = msg.qent
+      const q = msg.q || {}
 
-      const list = await intern.findKnex(qent)
+      const list = await intern.findKnex(qent, q)
       reply(null, list)
     },
 
