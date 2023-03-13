@@ -4,6 +4,7 @@ const lab = (exports.lab = Lab.script())
 const { describe, it } = lab
 const { expect } = require('@hapi/code')
 const Shared = require('seneca-store-test')
+// const Async = require('async')
 
 const KnexStore = require('../src/knex-store')
 const DbConfig = require('./config/database/config')
@@ -20,33 +21,33 @@ describe('standard', () => {
     })
   })
 
-  // describe('sort tests', () => {
-  //   Shared.sorttest({
-  //     seneca: senecaForTest,
-  //     script: lab
-  //   })
-  // })
+//   // describe('sort tests', () => {
+//   //   Shared.sorttest({
+//   //     seneca: senecaForTest,
+//   //     script: lab
+//   //   })
+//   // })
 
-  // describe('limit tests', () => {
-  //   Shared.limitstest({
-  //     seneca: senecaForTest,
-  //     script: lab
-  //   })
-  // })
+//   // describe('limit tests', () => {
+//   //   Shared.limitstest({
+//   //     seneca: senecaForTest,
+//   //     script: lab
+//   //   })
+//   // })
 
-  // describe('sql tests', () => {
-  //   Shared.sqltest({
-  //     seneca: senecaForTest,
-  //     script: lab
-  //   })
-  // })
+//   // describe('sql tests', () => {
+//   //   Shared.sqltest({
+//   //     seneca: senecaForTest,
+//   //     script: lab
+//   //   })
+//   // })
 
-  // describe('upsert tests', () => {
-  //   Shared.upserttest({
-  //     seneca: senecaForTest,
-  //     script: lab
-  //   })
-  // })
+//   // describe('upsert tests', () => {
+//   //   Shared.upserttest({
+//   //     seneca: senecaForTest,
+//   //     script: lab
+//   //   })
+//   // })
 })
 
 describe('smoke', function () {
@@ -55,13 +56,16 @@ describe('smoke', function () {
   let foo1_id
 
   it('save', async () => {
-    const foo1 = await senecaForTest.entity('foo').data$({p1:'t1'}).save$()
-    
-    expect(foo1[0].id).to.exist()
-    expect(typeof foo1[0].id).to.equal('string')
-    expect(foo1[0].p1).to.equal('t1')
+    const foo1 = await senecaForTest.entity('foo')
+    .data$({id: 'will-be-inserted', p1:'z1', p2:'z2', p3: 'z3'}).save$()
 
-    foo1_id = foo1[0].id
+    expect(foo1.id).to.exist()
+    expect(typeof foo1.id).to.equal('string')
+    expect(foo1.p1).to.equal('v1')
+    expect(foo1.p2).to.equal('z2')
+    expect(foo1.p3).to.equal('z3')
+
+    foo1_id = foo1.id
   })
 
   it('load', async () => {
@@ -69,14 +73,24 @@ describe('smoke', function () {
 
     expect(row.p1).to.exist()
     expect(typeof row.p1).to.equal('string')
-    expect(row.p1).equal('t1')
+    expect(row.p1).to.equal('v1')
+    expect(row.p2).to.equal('z2')
+    expect(row.p3).to.equal('z3')
   })
 
   it('list', async () => {
-    const rows = await senecaForTest.entity('foo').list$()
+    const rows = await senecaForTest.entity('foo').list$({})
 
     expect(rows.length).greaterThan(0)
-    expect(rows[0].p1).equal('t1')
+
+  })
+
+  it('filter', async () => {
+    const row = await senecaForTest.entity('foo').load$({p1: 'v2'})
+
+    expect(row.p1).to.equal('v1')
+    expect(row.p2).to.equal('z2')
+    expect(row.p3).to.equal('z3')
 
   })
 
@@ -84,9 +98,9 @@ describe('smoke', function () {
     const foo1 = await senecaForTest.entity('foo')
     .data$({p1: 't4', id: foo1_id }).save$()
 
-    expect(foo1[0].id).to.exist()
-    expect(typeof foo1[0].id).to.equal('string')
-    expect(foo1[0].p1).to.equal('t4')
+    expect(foo1.id).to.exist()
+    expect(typeof foo1.id).to.equal('string')
+    expect(foo1.p1).to.equal('t4')
   })
 
   it('remove', async () => {
@@ -96,12 +110,6 @@ describe('smoke', function () {
     expect(del.delete).to.equal(true)
   })
 
-  // it('removeAll', async () => {
-  //   const s0 = await senecaForTest.entity.begin()
-  //   const del = await s0.entity('foo').data$({id: idTest }).remove$()
-
-  //   expect(del.delete).to.equal(true)
-  // })
 })
 
 function makeSenecaForTest() {
@@ -113,3 +121,25 @@ function makeSenecaForTest() {
 
   return si
 }
+
+// function clearDb(si) {
+//   return () => new Promise(done => {
+//     Async.series([
+//       function clearFoo(next) {
+//         si.make('foo').remove$({ all$: true }, next)
+//       },
+
+//       function clearBar(next) {
+//         si.make('zen', 'moon', 'bar').remove$({ all$: true }, next)
+//       },
+
+//       function clearProduct(next) {
+//         si.make('products').remove$({ all$: true }, next)
+//       },
+
+//       function clearAutoIncrementors(next) {
+//         si.make('auto_incrementors').remove$({ all$: true }, next)
+//       }
+//     ], done)
+//   })
+// }
