@@ -45,20 +45,21 @@
     "knexjs"
   ],
   "peerDependencies": {
+    "knex": ">=2.4.2",
     "seneca": ">=3",
-    "seneca-entity": ">=18",
-    "knex": ">=2.4.2"
+    "seneca-entity": ">=18"
   },
   "devDependencies": {
-    "pg": ">=8.8.0",
     "@hapi/code": "9.0.1",
     "@hapi/lab": "25.0.1",
     "async": "3.2.4",
     "lab-transform-typescript": "3.0.1",
+    "pg": ">=8.8.0",
     "prettier": "2.7.1",
     "seneca-plugin-validator": "0.6.1",
     "seneca-promisify": "3.2.0",
     "seneca-store-test": "5.1.0",
+    "sqlite3": "^5.1.6",
     "typescript": "4.7.4"
   },
   "files": [
