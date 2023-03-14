@@ -52,7 +52,7 @@ export class intern {
     return intern.makeent(ent, query)
   }
 
-  static async insertKnex(ent: any, data: any, knex: any): Promise<any> {
+  static async insertKnex(ent: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -67,7 +67,7 @@ export class intern {
     return intern.makeent(ent, formattedQuery)
   }
 
-  static async updateKnex(ent: any, data: any, knex: any): Promise<any> {
+  static async updateKnex(ent: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -195,29 +195,6 @@ export class intern {
     return conf
   }
 
-  /*
-  * NOTE - KEEP - TX SUPPORT WILL COME FOR THE NEXT VERSION
-  */
-  static buildCtx(seneca: any, msg: any, meta: any) {
-    let ctx = {}
-    let transaction = seneca.fixedmeta?.custom?.sys__entity?.transaction
-
-    if(transaction && false !== msg.transaction$) {
-      transaction.trace.push({
-        when: Date.now(),
-        msg,
-        meta,
-      })
-      
-      ctx = {
-        transaction: transaction,
-        client: transaction.client,
-      }
-    }
-
-    return ctx
-  }
-
   static msgForGenerateId(args: any) {
     const { role, target } = args
     return { role, target, hook: 'generate_id' }
@@ -226,41 +203,6 @@ export class intern {
   static generateId() {
     const uuidV4 = Uuid()
     return uuidV4
-  }
-
-  // KEEP! TX SUPPORT WILL COME FOR THE NEXT VERSION
-  static async withDbClient(dbPool: any, ctx: any, f: any) {
-    ctx = ctx || {}
-    
-    let isTransaction = !!ctx.transaction
-    console.log('ctx.client', ctx.client)
-    ctx.client = ctx.client || await dbPool.connect()
-
-    if(isTransaction) {
-      if(null == ctx.transaction.client) {
-        ctx.transaction.client = ctx.client
-        await ctx.client.query('BEGIN')
-      }
-    }
-
-    let result
-
-    try {
-      result = await f(ctx.client)
-    }
-    catch(e) {
-      if(isTransaction) {
-	await ctx.client.query('ROLLBACK')
-      }
-      throw e
-    }
-    finally {
-      if(!isTransaction) {
-	ctx.client.release()
-      }
-    }
-
-    return result
   }
 
   static makeent(ent: any, row: any) {
