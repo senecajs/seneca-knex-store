@@ -24,6 +24,7 @@
     "docker-build": "docker-compose build",
     "docker-start": "docker-compose up -d",
     "docker-stop": "docker-compose kill",
+    "sqlite-migrate-build": "sqlite3 -init ./test/config/database/sqliteschema.sql ./test/config/database/senecatest.db '.exit'",
     "test": "lab -v -P test -L -t 90 -r console -o stdout -r html -o test/coverage.html -r lcov -o test/lcov.info --sourcemaps --transform node_modules/lab-transform-typescript",
     "test-some": "lab -v -P test --sourcemaps --transform node_modules/lab-transform-typescript -g",
     "prettier": "prettier --write --no-semi --single-quote src/**/*.ts test/*.js",
