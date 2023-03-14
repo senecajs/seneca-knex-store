@@ -7,13 +7,15 @@ run()
 async function run() {
 
   const configDB = {
-          name: "senecatest_knex",
-          host: "localhost",
-          port: 5433,
-          username: "senecatest",
-          password: "senecatest_0102",
-          options: {}
-        }
+    client: 'pg',
+    connection: {
+      host: '127.0.0.1',
+      port: 5433,
+      user: 'senecatest',
+      password: 'senecatest_0102',
+      database: 'senecatest_knex',
+    },
+  }
 
   const seneca = Seneca()
         .test()
