@@ -250,33 +250,4 @@ export class intern {
     return isUpdate
   }
 
-  static async execQuery(query: any, ctx: any) {
-    const { client, seneca } = ctx
-
-    if (!query) {
-      const err = new Error('An empty query is not a valid query')
-      return seneca.fail(err)
-    }
-
-    return client.query(query)
-  }
-
-  static deepXformKeys(f: any, x: any) : any {
-    if (Array.isArray(x)) {
-      return x.map((y: any) => intern.deepXformKeys(f, y))
-    }
-
-    if (intern.isObject(x)) {
-      const out: any = {}
-
-      for (const k in x) {
-        out[f(k)] = intern.deepXformKeys(f, x[k])
-      }
-
-      return out
-    }
-
-    return x
-  }
-
 }
