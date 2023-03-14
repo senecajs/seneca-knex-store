@@ -115,55 +115,6 @@ function knex_store(this: any, options: Options) {
     }
   )
 
-  seneca.add(
-    intern.msgForGenerateId({ role: 'sql', target: STORE_NAME }),
-    function (_msg: any, done: any) {
-      let id = intern.generateId()
-      return done(null, { id })
-    }
-  )
-
-  seneca.add(
-    'sys:entity,transaction:begin',
-    function (this: any, msg: any, reply: any) {
-      // NOTE: `BEGIN` is called in intern.withDbClient
-      reply({
-        handle: { id: this.util.Nid(), name: 'postgres' },
-      })
-    }
-  )
-
-  seneca.add('sys:entity,transaction:end', function (msg: any, reply: any) {
-    let transaction = msg.details()
-    let client = transaction.client
-    client
-      .query('COMMIT')
-      .then(() => {
-        reply({
-          done: true,
-        })
-      })
-      .catch((err: any) => reply(err))
-  })
-
-  seneca.add(
-    'sys:entity,transaction:rollback',
-    function (msg: any, reply: any) {
-      let transaction = msg.details()
-      let client = transaction.client
-
-      client
-        .query('ROLLBACK')
-        .then(() => {
-          reply({
-            done: false,
-            rollback: true,
-          })
-        })
-        .catch((err: any) => reply(err))
-    }
-  )
-
   // We don't return the store itself, it will self load into Seneca via the
   // init() function. Instead we return a simple object with the stores name
   // and generated meta tag.
