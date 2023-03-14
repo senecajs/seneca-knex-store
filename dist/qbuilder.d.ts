@@ -1,4 +1,4 @@
-declare const Q: {
+declare function qBuilder(knex: any): {
     upsert(args: {
         table_name: string;
         data: any;
@@ -31,4 +31,4 @@ declare const Q: {
         filter: any;
     }): any;
 };
-export default Q;
+export default qBuilder;

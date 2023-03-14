@@ -19,7 +19,7 @@ class intern {
                 .catch(done);
         };
     }
-    static async findKnex(ent, q) {
+    static async findKnex(ent, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         const isQArray = Array.isArray(q);
@@ -29,31 +29,31 @@ class intern {
             data: intern.isObjectEmpty(filter) ? false : filter,
             isArray: isQArray
         };
-        const query = await qbuilder_1.default.select(args);
+        const query = await (0, qbuilder_1.default)(knex).select(args);
         return query.map((row) => intern.makeent(ent, row));
     }
-    static async firstKnex(ent, q) {
+    static async firstKnex(ent, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const args = {
             table_name: ent_table,
             filter: q
         };
-        const query = await qbuilder_1.default.first(args);
+        const query = await (0, qbuilder_1.default)(knex).first(args);
         // return query
         return intern.makeent(ent, query);
     }
-    static async insertKnex(ent, data) {
+    static async insertKnex(ent, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         const args = {
             table_name: ent_table,
             data: { ...entp, id: entp.id ? entp.id : Uuid() },
         };
-        const query = await qbuilder_1.default.insert(args);
+        const query = await (0, qbuilder_1.default)(knex).insert(args);
         const formattedQuery = query.length == 1 ? query[0] : query;
         return intern.makeent(ent, formattedQuery);
     }
-    static async updateKnex(ent, data) {
+    static async updateKnex(ent, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         const { id, ...rest } = entp;
@@ -62,12 +62,12 @@ class intern {
             data: rest,
             id: id
         };
-        const query = await qbuilder_1.default.update(args);
+        const query = await (0, qbuilder_1.default)(knex).update(args);
         const formattedQuery = query.length == 1 ? query[0] : query;
         // return query
         return intern.makeent(ent, formattedQuery);
     }
-    static async removeKnex(ent, q) {
+    static async removeKnex(ent, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         const filter = intern.isObjectEmpty(q) ? { ...entp } : { ...q };
@@ -81,24 +81,24 @@ class intern {
             isLoadDeleted
         };
         if (q.all$) {
-            await qbuilder_1.default.truncate(args);
+            await (0, qbuilder_1.default)(knex).truncate(args);
             //Knex returns the number of rows affected if delete is ok
             return null;
         }
-        const query = await qbuilder_1.default.delete(args);
+        const query = await (0, qbuilder_1.default)(knex).delete(args);
         //Knex returns the number of rows affected if delete is ok
         const result = typeof query == 'number' ? null : 'Error';
         const formattedQuery = query.length == 1 ? query[0] : query;
         return isLoadDeleted ? intern.makeent(ent, formattedQuery) : result;
     }
-    static async upsertKnex(ent, data, q) {
+    static async upsertKnex(ent, data, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const args = {
             table_name: ent_table,
             data: data,
             id: q
         };
-        const query = qbuilder_1.default.upsert(args);
+        const query = (0, qbuilder_1.default)(knex).upsert(args);
         return query;
     }
     static tablenameUtil(ent) {
@@ -153,26 +153,6 @@ class intern {
         conf.password = conf.password || conf.pass;
         return conf;
     }
-    /*
-    * NOTE - KEEP - TX SUPPORT WILL COME FOR THE NEXT VERSION
-    */
-    static buildCtx(seneca, msg, meta) {
-        var _a, _b, _c;
-        let ctx = {};
-        let transaction = (_c = (_b = (_a = seneca.fixedmeta) === null || _a === void 0 ? void 0 : _a.custom) === null || _b === void 0 ? void 0 : _b.sys__entity) === null || _c === void 0 ? void 0 : _c.transaction;
-        if (transaction && false !== msg.transaction$) {
-            transaction.trace.push({
-                when: Date.now(),
-                msg,
-                meta,
-            });
-            ctx = {
-                transaction: transaction,
-                client: transaction.client,
-            };
-        }
-        return ctx;
-    }
     static msgForGenerateId(args) {
         const { role, target } = args;
         return { role, target, hook: 'generate_id' };
@@ -180,34 +160,6 @@ class intern {
     static generateId() {
         const uuidV4 = Uuid();
         return uuidV4;
-    }
-    // KEEP! TX SUPPORT WILL COME FOR THE NEXT VERSION
-    static async withDbClient(dbPool, ctx, f) {
-        ctx = ctx || {};
-        let isTransaction = !!ctx.transaction;
-        ctx.client = ctx.client || await dbPool.connect();
-        if (isTransaction) {
-            if (null == ctx.transaction.client) {
-                ctx.transaction.client = ctx.client;
-                await ctx.client.query('BEGIN');
-            }
-        }
-        let result;
-        try {
-            result = await f(ctx.client);
-        }
-        catch (e) {
-            if (isTransaction) {
-                await ctx.client.query('ROLLBACK');
-            }
-            throw e;
-        }
-        finally {
-            if (!isTransaction) {
-                ctx.client.release();
-            }
-        }
-        return result;
     }
     static makeent(ent, row) {
         if (!row) {
@@ -232,14 +184,14 @@ class intern {
         }
         return ent.make$(entp);
     }
-    static async isUpdate(ent) {
+    static async isUpdate(ent, knex) {
         if (!ent.id) {
             return false;
         }
         const id = {
             id: ent.id
         };
-        const rowExist = await intern.firstKnex(ent, id);
+        const rowExist = await intern.firstKnex(ent, id, knex);
         const isUpdate = rowExist ? true : false;
         return isUpdate;
     }
