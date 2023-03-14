@@ -1,6 +1,5 @@
 /* Copyright (c) 2010-2022 Richard Rodger and other contributors, MIT License */
 import { intern } from './intern'
-const Pg = require('pg')
 const { asyncMethod } = intern
 import knex from 'knex'
 
