@@ -1,5 +1,4 @@
 function qBuilder(knex: any) {
-  // console.log('KNEX', knex)
   const Q = {
     upsert(args: { table_name: string; data: any; id: string }) {
       return knex(args.table_name).upsert(args.data, args.id)

@@ -19,11 +19,6 @@ function knex_store(this: any, options: Options) {
   // Take a reference to the calling Seneca instance
   const seneca = this
 
-  let dbPool: {
-    end: any
-    connect: () => Promise<any>
-  }
-
   let db : any
 
   function configure(spec: any, done: any) {
@@ -98,12 +93,14 @@ function knex_store(this: any, options: Options) {
       reply(null, remove)
     },
 
-    native: function (_msg: any, done: any) {
-      dbPool.connect().then(done).catch(done)
+    native: function (_msg: any, reply: any) {
+      reply({ native: ()=> db })
     },
 
-    close: function (_msg: any, done: any) {
-      dbPool.end().then(done).catch(done)
+    close: function (_msg: any, reply: any) {
+      reply({ native: ()=> db }).then(() => {
+        db.destroy()
+      })
     },
   }
 
@@ -117,12 +114,6 @@ function knex_store(this: any, options: Options) {
       return configure(options, done)
     }
   )
-
-  // let dbref: any = null
-
-  // seneca.add({ init: store.name, tag: meta.tag }, function (_msg: any, done: any) {
-  //   configure.call(this, options).then((result: any)=>{ dbref=result; done(result) })
-  // })
 
   seneca.add(
     intern.msgForGenerateId({ role: 'sql', target: STORE_NAME }),

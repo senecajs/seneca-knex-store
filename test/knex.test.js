@@ -8,21 +8,33 @@ const Async = require('async')
 
 const KnexStore = require('../src/knex-store')
 
+const DbConfigPG = {
+  client: 'pg',
+  connection: {
+    host: '127.0.0.1',
+    port: 5433,
+    user: 'senecatest',
+    password: 'senecatest_0102',
+    database: 'senecatest_knex',
+  },
+}
+
+const DbConfigSQLite = {
+  client: 'pg',
+  connection: {
+    host: '127.0.0.1',
+    port: 5433,
+    user: 'senecatest',
+    password: 'senecatest_0102',
+    database: 'senecatest_knex',
+  },
+}
+
 describe('standard - postgres', () => {
-  const DbConfig = {
-    client: 'pg',
-    connection: {
-      host: '127.0.0.1',
-      port: 5433,
-      user: 'senecatest',
-      password: 'senecatest_0102',
-      database: 'senecatest_knex',
-    },
-  }
 
-  const senecaForTest = makeSenecaForTest(DbConfig)
+  const senecaForTest = makeSenecaForTest(DbConfigPG)
 
-  senecaStoreBasicTests(senecaForTest)
+  senecaStoreBasicTests(senecaForTest, DbConfigPG)
 
   //   // describe('sort tests', () => {
   //   //   Shared.sorttest({
@@ -54,16 +66,10 @@ describe('standard - postgres', () => {
 })
 
 describe('standard - sqlite', () => {
-  const DbConfig = {
-    client: 'sqlite3', // or 'better-sqlite3'
-    connection: {
-      filename: './test/config/database/senecatest.db',
-    },
-  }
 
-  const senecaForTest = makeSenecaForTest(DbConfig)
+  const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
-  senecaStoreBasicTests(senecaForTest)
+  senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
 
   //   // describe('sort tests', () => {
   //   //   Shared.sorttest({
@@ -95,7 +101,8 @@ describe('standard - sqlite', () => {
 })
 
 describe('smoke - postgres', function () {
-  const senecaForTest = makeSenecaForTest()
+
+  const senecaForTest = makeSenecaForTest(DbConfigPG)
 
   clearDb(senecaForTest)
 
@@ -103,18 +110,19 @@ describe('smoke - postgres', function () {
 })
 
 describe('smoke - sqlite', function () {
-  const senecaForTest = makeSenecaForTest()
+
+  const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
   clearDb(senecaForTest)
 
   smokeTests(senecaForTest)
 })
 
-function senecaStoreBasicTests(senecaForTest) {
+function senecaStoreBasicTests(senecaForTest, DbConfig) {
   describe('basic tests', () => {
     Shared.basictest({
       seneca: senecaForTest,
-      senecaMerge: makeSenecaForTest(),
+      senecaMerge: makeSenecaForTest(DbConfig),
       script: lab,
     })
   })
