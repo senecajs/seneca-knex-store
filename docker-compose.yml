@@ -1,8 +1,20 @@
-postgres:
-  build: ./test/config/docker
-  ports:
-    - "5433:5432"
-  environment:
-    POSTGRES_PASSWORD: senecatest_0102
-    POSTGRES_DB: senecatest_knex
-    POSTGRES_USER: senecatest
+services:
+  postgres:
+    build:
+      context: ./test/config/docker/
+      dockerfile: postgres.Dockerfile
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_PASSWORD: senecatest_0102
+      POSTGRES_DB: senecatest_knex
+      POSTGRES_USER: senecatest
+  sqlite:
+    build:
+      context: ./test/config/docker/
+      dockerfile: sqlite.Dockerfile
+    volumes:
+      - ./data:/data
+    command: sh -c "sqlite3 /data/mydb.sqlite && while true; do sleep 3600; done"
+    ports:
+      - '5434:5434'
