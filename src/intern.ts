@@ -1,4 +1,4 @@
-import Q from './qbuilder'
+import qBuilder from './qbuilder'
 const Uuid = require('uuid').v4
 const Assert = require('assert')
 
@@ -20,7 +20,7 @@ export class intern {
     }
   }
 
-  static async findKnex(ent: any, q: any): Promise<any> {
+  static async findKnex(ent: any, q: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -34,12 +34,12 @@ export class intern {
       isArray: isQArray
     }
     
-    const query = await Q.select(args)
+    const query = await qBuilder(knex).select(args)
     return query.map((row: any) => intern.makeent(ent, row))
 
   }
 
-  static async firstKnex(ent: any, q: any): Promise<any> {
+  static async firstKnex(ent: any, q: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -47,12 +47,12 @@ export class intern {
       filter: q
     }
 
-    const query = await Q.first(args)
+    const query = await qBuilder(knex).first(args)
     // return query
     return intern.makeent(ent, query)
   }
 
-  static async insertKnex(ent: any, data: any): Promise<any> {
+  static async insertKnex(ent: any, data: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -61,13 +61,13 @@ export class intern {
       data: {...entp, id: entp.id ? entp.id : Uuid()},
     }
 
-    const query = await Q.insert(args)
+    const query = await qBuilder(knex).insert(args)
     const formattedQuery = query.length == 1 ? query[0] : query
 
     return intern.makeent(ent, formattedQuery)
   }
 
-  static async updateKnex(ent: any, data: any): Promise<any> {
+  static async updateKnex(ent: any, data: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -79,13 +79,13 @@ export class intern {
       id: id
     }
 
-    const query = await Q.update(args)
+    const query = await qBuilder(knex).update(args)
     const formattedQuery = query.length == 1 ? query[0] : query
     // return query
     return intern.makeent(ent, formattedQuery)
   }
 
-  static async removeKnex(ent: any, q: any): Promise<any> {
+  static async removeKnex(ent: any, q: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -104,19 +104,19 @@ export class intern {
     }
     
     if (q.all$) {
-      await Q.truncate(args)
+      await qBuilder(knex).truncate(args)
       //Knex returns the number of rows affected if delete is ok
       return null
     }
     
-    const query = await Q.delete(args)
+    const query = await qBuilder(knex).delete(args)
     //Knex returns the number of rows affected if delete is ok
     const result = typeof query == 'number' ? null : 'Error'
     const formattedQuery = query.length == 1 ? query[0] : query
     return isLoadDeleted ? intern.makeent(ent, formattedQuery) : result
   }
 
-  static async upsertKnex(ent: any, data: any, q: any): Promise<any> {
+  static async upsertKnex(ent: any, data: any, q: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -125,7 +125,7 @@ export class intern {
       id: q
     }
 
-    const query = Q.upsert(args)
+    const query = qBuilder(knex).upsert(args)
     return query
   }
 
@@ -233,7 +233,7 @@ export class intern {
     ctx = ctx || {}
     
     let isTransaction = !!ctx.transaction
-    
+    console.log('ctx.client', ctx.client)
     ctx.client = ctx.client || await dbPool.connect()
 
     if(isTransaction) {
@@ -292,7 +292,7 @@ export class intern {
     return ent.make$(entp)
   }
 
-  static async isUpdate(ent: any) {
+  static async isUpdate(ent: any, knex: any) {
 
     if (!ent.id) {
       return false
@@ -302,7 +302,7 @@ export class intern {
       id: ent.id
     }
 
-    const rowExist = await intern.firstKnex(ent, id)
+    const rowExist = await intern.firstKnex(ent, id, knex)
     const isUpdate = rowExist ? true : false
 
     return isUpdate
