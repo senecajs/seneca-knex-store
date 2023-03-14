@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function qBuilder(knex) {
-    // console.log('KNEX', knex)
     const Q = {
         upsert(args) {
             return knex(args.table_name).upsert(args.data, args.id);

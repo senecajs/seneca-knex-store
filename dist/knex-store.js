@@ -12,7 +12,6 @@ const STORE_NAME = 'knex-store';
 function knex_store(options) {
     // Take a reference to the calling Seneca instance
     const seneca = this;
-    let dbPool;
     let db;
     function configure(spec, done) {
         db = (0, knex_1.default)(spec);
@@ -69,11 +68,13 @@ function knex_store(options) {
             const remove = await intern_1.intern.removeKnex(qent, q, db);
             reply(null, remove);
         },
-        native: function (_msg, done) {
-            dbPool.connect().then(done).catch(done);
+        native: function (_msg, reply) {
+            reply({ native: () => db });
         },
-        close: function (_msg, done) {
-            dbPool.end().then(done).catch(done);
+        close: function (_msg, reply) {
+            reply({ native: () => db }).then(() => {
+                db.destroy();
+            });
         },
     };
     // Seneca will call init:plugin-name for us. This makes
@@ -82,10 +83,6 @@ function knex_store(options) {
     seneca.add({ init: store.name, tag: meta.tag }, function (_msg, done) {
         return configure(options, done);
     });
-    // let dbref: any = null
-    // seneca.add({ init: store.name, tag: meta.tag }, function (_msg: any, done: any) {
-    //   configure.call(this, options).then((result: any)=>{ dbref=result; done(result) })
-    // })
     seneca.add(intern_1.intern.msgForGenerateId({ role: 'sql', target: STORE_NAME }), function (_msg, done) {
         let id = intern_1.intern.generateId();
         return done(null, { id });
