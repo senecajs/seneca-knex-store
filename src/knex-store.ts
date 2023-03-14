@@ -30,18 +30,6 @@ function knex_store(this: any, options: Options) {
 
     db = knex(spec)
 
-    if (spec.client == 'pg') {
-      const conf = intern.getConfig(spec)
-
-      dbPool = new Pg.Pool({
-        user: conf.connection.user,
-        host: conf.connection.host,
-        database: conf.connection.database,
-        password: conf.connection.password,
-        port: conf.connection.port,
-      })
-    }
-
     return done()
 
   }
@@ -53,18 +41,7 @@ function knex_store(this: any, options: Options) {
     // use in seneca.use(), eg seneca.use('knex-store').
     name: STORE_NAME,
 
-    save: asyncMethod(async function (this: any, msg: any, meta: any) {
-      const seneca = this
-
-      console.log('seneca', seneca)
-      console.log('msg', msg)
-      console.log('meta', meta)
-      //Further implementation
-      // const ctx = {}
-      const ctx = intern.buildCtx(seneca, msg, meta)
-
-      return intern.withDbClient(dbPool, ctx, async (client: any) => {
-        const ctx = { seneca, client }
+    save: asyncMethod(async function (this: any, msg: any) {
         const { ent, q } = msg
 
         // Create a new entity
@@ -77,7 +54,7 @@ function knex_store(this: any, options: Options) {
               newEnt.id = ent.id$
             }
 
-            const doCreate = await intern.insertKnex(newEnt, ctx, db)
+            const doCreate = await intern.insertKnex(newEnt, db)
 
             return doCreate
           } catch (err) {
@@ -87,7 +64,7 @@ function knex_store(this: any, options: Options) {
 
         // Save an existing entity
         async function do_save() {
-          const doSave = await intern.updateKnex(ent, ctx, db)
+          const doSave = await intern.updateKnex(ent, db)
           // call the reply callback with the
           // updated entity
           return doSave
@@ -96,7 +73,6 @@ function knex_store(this: any, options: Options) {
         const save = (await intern.isUpdate(ent, db)) ? do_save() : do_create()
 
         return save
-      })
     }),
 
     load: async function (this: any, msg: any, reply: any) {
