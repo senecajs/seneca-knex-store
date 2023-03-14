@@ -19,12 +19,13 @@ function getConfig() {
   }
 
   return {
-    name: "senecatest_knex",
-    host: "localhost",
-    port: 5433,
-    username: "senecatest",
-    password: "senecatest_0102",
-    options: {},
+    // name: "senecatest_knex",
+    // host: "localhost",
+    // port: 5433,
+    // username: "senecatest",
+    // password: "senecatest_0102",
+    // options: {},
+
     // client: 'pg',
     // connection: {
     //   host: '127.0.0.1',
@@ -33,6 +34,11 @@ function getConfig() {
     //   password: 'senecatest_0102',
     //   database: 'senecatest_knex',
     // },
+
+    client: 'sqlite3', // or 'better-sqlite3'
+    connection: {
+      filename: "./senecatest.db"
+    }
   }
 }
 
