@@ -12,30 +12,68 @@ function qBuilder(knex: any) {
     insert(args: { table_name: string; data: any }) {
       return knex(args.table_name).insert(args.data).returning('*')
     },
-    delete(args: { table_name: string; filter: string, isLoadDeleted: boolean }) {
-      if (args.isLoadDeleted){
+    delete(args: {
+      table_name: string
+      filter: string
+      isLoad: boolean,
+      skip?: number | null
+    }) {
+      let query = knex(args.table_name)
+      if (args.skip) {
+        query = query.offset(args.skip)
+      }
+      if (args.isLoad) {
         return knex(args.table_name).where(args.filter).del().returning('*')
       }
-      return knex(args.table_name).where(args.filter).del()
+      return query.where(args.filter).del()
     },
     truncate(args: { table_name: string }) {
       return knex(args.table_name).truncate()
     },
-    select(args: { table_name: string; data: any, isArray: boolean }) {
-      if(args.isArray){
-        return knex(args.table_name).whereIn('id', args.data)
+    select(args: {
+      table_name: string
+      data: any
+      isArray: boolean
+      sort: { field: string; order: string } | null
+      skip?: number | null
+      limit?: number | null
+    }) {
+      let query = knex(args.table_name)
+      if (args.sort) {
+        query = query.orderBy(args.sort.field, args.sort.order)
       }
-      return args.data
-        ? knex(args.table_name).select().where(args.data)
-        : knex.select('*').from(args.table_name)
+      if (args.skip) {
+        query = query.offset(args.skip)
+      }
+      if (args.limit) {
+        query = query.limit(args.limit)
+      }
+      if (args.isArray) {
+        return query.whereIn('id', args.data)
+      }
+      if(args.data) {
+        return query.where(args.data)
+      }
+      return query
     },
-    first(args: { table_name: string; filter: any }) {
-      return knex(args.table_name).where(args.filter).first()
+    first(args: {
+      table_name: string
+      filter: any
+      sort: { field: string; order: string } | null
+      skip?: number | null
+    }) {
+      if (args.sort) {
+        return knex(args.table_name)
+          .orderBy(args.sort.field, args.sort.order)
+          .where(args.filter)
+          .offset(args.skip)
+          .first()
+      }
+      return knex(args.table_name).where(args.filter).offset(args.skip).first()
     },
   }
 
   return Q
 }
-
 
 export default qBuilder

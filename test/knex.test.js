@@ -36,19 +36,9 @@ describe('standard - postgres', () => {
 
   senecaStoreBasicTests(senecaForTest, DbConfigPG)
 
-  //   // describe('sort tests', () => {
-  //   //   Shared.sorttest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
+  senecaStoreSortTests(senecaForTest)
 
-  //   // describe('limit tests', () => {
-  //   //   Shared.limitstest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
+  // senecaStoreLimitTests(senecaForTest)
 
   //   // describe('sql tests', () => {
   //   //   Shared.sqltest({
@@ -70,6 +60,10 @@ describe('standard - sqlite', () => {
   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
   senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
+
+  senecaStoreSortTests(senecaForTest)
+
+  // senecaStoreLimitTests(senecaForTest)
 
   //   // describe('sort tests', () => {
   //   //   Shared.sorttest({
@@ -127,6 +121,24 @@ function senecaStoreBasicTests(senecaForTest, DbConfig) {
     })
   })
 }
+
+function senecaStoreSortTests(senecaForTest) {
+  describe('sort tests', () => {
+    Shared.sorttest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+}
+
+// function senecaStoreLimitTests(senecaForTest) {
+//   describe('limit tests', () => {
+//     Shared.limitstest({
+//       seneca: senecaForTest,
+//       script: lab
+//     })
+//   })
+// }
 
 function smokeTests(senecaForTest) {
   let foo1_id

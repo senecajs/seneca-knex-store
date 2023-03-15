@@ -28,10 +28,39 @@ export class intern {
 
     const filter = intern.isObjectEmpty(q) ? {...entp} : isQArray ? q : {...q}
 
+    let sort = null
+    let skip = null
+    let limit = null
+
+    if (filter.sort$) {
+
+      const firstKey = Object.keys(filter.sort$)[0];
+      const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
+      sort = {
+        field: firstKey,
+        order: sortValue
+      }
+
+      delete filter.sort$
+    }
+
+    if (filter.skip$) {
+      skip = filter.skip$ > 0 ? filter.skip$ : 0
+      delete filter.skip$
+    }
+
+    if (filter.limit$) {
+      limit = filter.limit$ > 0 ? filter.limit$ : null
+      delete filter.limit$
+    }
+
     const args = {
       table_name: ent_table,
       data: intern.isObjectEmpty(filter) ? false : filter,
-      isArray: isQArray
+      isArray: isQArray,
+      sort,
+      skip,
+      ...(limit && {limit})
     }
     
     const query = await qBuilder(knex).select(args)
@@ -42,13 +71,38 @@ export class intern {
   static async firstKnex(ent: any, q: any, knex: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
+    let sort = null
+    let skip = null
+
+    if (q.sort$) {
+
+      const firstKey = Object.keys(q.sort$)[0];
+      const sortValue = q.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
+      sort = {
+        field: firstKey,
+        order: sortValue
+      }
+
+      delete q.sort$
+    }
+
+    if (q.skip$) {
+      skip = q.skip$ > 0 ? q.skip$ : 0
+      delete q.skip$
+    }
+
+    if (q.limit$) {
+      delete q.limit$
+    }
+
     const args = {
       table_name: ent_table,
-      filter: q
+      filter: q,
+      sort,
+      skip
     }
 
     const query = await qBuilder(knex).first(args)
-    // return query
     return intern.makeent(ent, query)
   }
 
@@ -81,7 +135,6 @@ export class intern {
 
     const query = await qBuilder(knex).update(args)
     const formattedQuery = query.length == 1 ? query[0] : query
-    // return query
     return intern.makeent(ent, formattedQuery)
   }
 
@@ -91,29 +144,68 @@ export class intern {
 
     const filter = intern.isObjectEmpty(q) ? {...entp} : {...q}
 
-    const isLoadDeleted = filter.load$ ? true : false
+    const isLoad = filter.load$ ? true : false
 
-    if (isLoadDeleted) {
+    if (isLoad) {
       delete filter.load$
+    }
+
+    let sort = null
+    let skip = null
+    let first = null
+
+    if (filter.limit$){
+      delete filter.limit$
+    }
+    
+    if (filter.skip$){
+      skip = filter.skip$
+      delete filter.skip$
+    }
+
+    if (filter.sort$) {
+
+      const firstKey = Object.keys(filter.sort$)[0];
+
+      const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
+
+      sort = {
+        field: firstKey,
+        order: sortValue
+      }
+
+      delete filter.sort$
+
+      const argsFind = {
+        table_name: ent_table,
+        filter,
+        sort,
+        skip
+      }
+
+      first = await qBuilder(knex).first(argsFind)
+
     }
 
     const args = {
       table_name: ent_table,
-      filter,
-      isLoadDeleted
+      filter: first ? {id: first.id} : filter,
+      isLoad,
+      skip
     }
     
-    if (q.all$) {
+    if (filter.all$) {
       await qBuilder(knex).truncate(args)
       //Knex returns the number of rows affected if delete is ok
       return null
     }
     
     const query = await qBuilder(knex).delete(args)
+
     //Knex returns the number of rows affected if delete is ok
     const result = typeof query == 'number' ? null : 'Error'
     const formattedQuery = query.length == 1 ? query[0] : query
-    return isLoadDeleted ? intern.makeent(ent, formattedQuery) : result
+    return isLoad ? intern.makeent(ent, formattedQuery) : result
   }
 
   static async upsertKnex(ent: any, data: any, q: any, knex: any): Promise<any> {
