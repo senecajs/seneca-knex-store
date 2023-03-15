@@ -20,6 +20,4 @@ export declare class intern {
     static generateId(): any;
     static makeent(ent: any, row: any): any;
     static isUpdate(ent: any, knex: any): Promise<boolean>;
-    static execQuery(query: any, ctx: any): Promise<any>;
-    static deepXformKeys(f: any, x: any): any;
 }

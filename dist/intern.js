@@ -24,22 +24,64 @@ class intern {
         const entp = intern.makeentp(ent);
         const isQArray = Array.isArray(q);
         const filter = intern.isObjectEmpty(q) ? { ...entp } : isQArray ? q : { ...q };
+        let sort = null;
+        let skip = null;
+        let limit = null;
+        if (filter.sort$) {
+            const firstKey = Object.keys(filter.sort$)[0];
+            const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC';
+            sort = {
+                field: firstKey,
+                order: sortValue
+            };
+            delete filter.sort$;
+        }
+        if (filter.skip$) {
+            skip = filter.skip$ > 0 ? filter.skip$ : 0;
+            delete filter.skip$;
+        }
+        if (filter.limit$) {
+            limit = filter.limit$ > 0 ? filter.limit$ : null;
+            delete filter.limit$;
+        }
         const args = {
             table_name: ent_table,
             data: intern.isObjectEmpty(filter) ? false : filter,
-            isArray: isQArray
+            isArray: isQArray,
+            sort,
+            skip,
+            ...(limit && { limit })
         };
         const query = await (0, qbuilder_1.default)(knex).select(args);
         return query.map((row) => intern.makeent(ent, row));
     }
     static async firstKnex(ent, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
+        let sort = null;
+        let skip = null;
+        if (q.sort$) {
+            const firstKey = Object.keys(q.sort$)[0];
+            const sortValue = q.sort$[firstKey] == 1 ? 'ASC' : 'DESC';
+            sort = {
+                field: firstKey,
+                order: sortValue
+            };
+            delete q.sort$;
+        }
+        if (q.skip$) {
+            skip = q.skip$ > 0 ? q.skip$ : 0;
+            delete q.skip$;
+        }
+        if (q.limit$) {
+            delete q.limit$;
+        }
         const args = {
             table_name: ent_table,
-            filter: q
+            filter: q,
+            sort,
+            skip
         };
         const query = await (0, qbuilder_1.default)(knex).first(args);
-        // return query
         return intern.makeent(ent, query);
     }
     static async insertKnex(ent, knex) {
@@ -64,23 +106,49 @@ class intern {
         };
         const query = await (0, qbuilder_1.default)(knex).update(args);
         const formattedQuery = query.length == 1 ? query[0] : query;
-        // return query
         return intern.makeent(ent, formattedQuery);
     }
     static async removeKnex(ent, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         const filter = intern.isObjectEmpty(q) ? { ...entp } : { ...q };
-        const isLoadDeleted = filter.load$ ? true : false;
-        if (isLoadDeleted) {
+        const isLoad = filter.load$ ? true : false;
+        if (isLoad) {
             delete filter.load$;
+        }
+        let sort = null;
+        let skip = null;
+        let first = null;
+        if (filter.limit$) {
+            delete filter.limit$;
+        }
+        if (filter.skip$) {
+            skip = filter.skip$;
+            delete filter.skip$;
+        }
+        if (filter.sort$) {
+            const firstKey = Object.keys(filter.sort$)[0];
+            const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC';
+            sort = {
+                field: firstKey,
+                order: sortValue
+            };
+            delete filter.sort$;
+            const argsFind = {
+                table_name: ent_table,
+                filter,
+                sort,
+                skip
+            };
+            first = await (0, qbuilder_1.default)(knex).first(argsFind);
         }
         const args = {
             table_name: ent_table,
-            filter,
-            isLoadDeleted
+            filter: first ? { id: first.id } : filter,
+            isLoad,
+            skip
         };
-        if (q.all$) {
+        if (filter.all$) {
             await (0, qbuilder_1.default)(knex).truncate(args);
             //Knex returns the number of rows affected if delete is ok
             return null;
@@ -89,7 +157,7 @@ class intern {
         //Knex returns the number of rows affected if delete is ok
         const result = typeof query == 'number' ? null : 'Error';
         const formattedQuery = query.length == 1 ? query[0] : query;
-        return isLoadDeleted ? intern.makeent(ent, formattedQuery) : result;
+        return isLoad ? intern.makeent(ent, formattedQuery) : result;
     }
     static async upsertKnex(ent, data, q, knex) {
         const ent_table = intern.tablenameUtil(ent);
@@ -194,27 +262,6 @@ class intern {
         const rowExist = await intern.firstKnex(ent, id, knex);
         const isUpdate = rowExist ? true : false;
         return isUpdate;
-    }
-    static async execQuery(query, ctx) {
-        const { client, seneca } = ctx;
-        if (!query) {
-            const err = new Error('An empty query is not a valid query');
-            return seneca.fail(err);
-        }
-        return client.query(query);
-    }
-    static deepXformKeys(f, x) {
-        if (Array.isArray(x)) {
-            return x.map((y) => intern.deepXformKeys(f, y));
-        }
-        if (intern.isObject(x)) {
-            const out = {};
-            for (const k in x) {
-                out[f(k)] = intern.deepXformKeys(f, x[k]);
-            }
-            return out;
-        }
-        return x;
     }
 }
 exports.intern = intern;
