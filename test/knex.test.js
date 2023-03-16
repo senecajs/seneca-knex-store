@@ -38,21 +38,11 @@ describe('standard - postgres', () => {
 
   senecaStoreSortTests(senecaForTest)
 
-  // senecaStoreLimitTests(senecaForTest)
+  senecaStoreLimitTests(senecaForTest)
 
-  //   // describe('sql tests', () => {
-  //   //   Shared.sqltest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
+  senecaStoreSQLTests(senecaForTest)
 
-  //   // describe('upsert tests', () => {
-  //   //   Shared.upserttest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
+  // senecaStoreUpsertTests(senecaForTest)
 })
 
 describe('standard - sqlite', () => {
@@ -63,35 +53,11 @@ describe('standard - sqlite', () => {
 
   senecaStoreSortTests(senecaForTest)
 
-  // senecaStoreLimitTests(senecaForTest)
+  senecaStoreLimitTests(senecaForTest)
 
-  //   // describe('sort tests', () => {
-  //   //   Shared.sorttest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
+  senecaStoreSQLTests(senecaForTest)
 
-  //   // describe('limit tests', () => {
-  //   //   Shared.limitstest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
-
-  //   // describe('sql tests', () => {
-  //   //   Shared.sqltest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
-
-  //   // describe('upsert tests', () => {
-  //   //   Shared.upserttest({
-  //   //     seneca: senecaForTest,
-  //   //     script: lab
-  //   //   })
-  //   // })
+  // senecaStoreUpsertTests(senecaForTest)
 })
 
 describe('smoke - postgres', function () {
@@ -131,9 +97,27 @@ function senecaStoreSortTests(senecaForTest) {
   })
 }
 
-// function senecaStoreLimitTests(senecaForTest) {
-//   describe('limit tests', () => {
-//     Shared.limitstest({
+function senecaStoreLimitTests(senecaForTest) {
+  describe('limit tests', () => {
+    Shared.limitstest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+}
+
+function senecaStoreSQLTests(senecaForTest) {
+  describe('sql tests', () => {
+    Shared.sqltest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+}
+
+// function senecaStoreUpsertTests(senecaForTest) {
+//   describe('upsert tests', () => {
+//     Shared.upserttest({
 //       seneca: senecaForTest,
 //       script: lab
 //     })
