@@ -1,32 +1,27 @@
-import qBuilder from './qbuilder'
+import QBuilder from './qbuilder'
 const Uuid = require('uuid').v4
-const Assert = require('assert')
+import Assert from 'assert'
 
+const intern = {
 
-export class intern {
-
-  static asyncMethod(f: any) {
-    return function(this: any, msg: any, done: any, meta: any) {
-      const seneca = this
-      const p = f.call(seneca, msg, meta)
-
-      Assert('function' === typeof p.then &&
-      'function' === typeof p.catch,
-      'The function must be async, i.e. return a promise.')
-
-      return p
-        .then((result: any) => done(null, result))
-        .catch(done)
-    }
-  }
-
-  static async findKnex(ent: any, q: any, knex: any): Promise<any> {
+  async findKnex(knex: any, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
     const isQArray = Array.isArray(q)
 
     const filter = intern.isObjectEmpty(q) ? {...entp} : isQArray ? q : {...q}
+
+    if (filter.native$) {
+      const argsNative = typeof filter.native$ === 'string' ? {
+        query: filter.native$
+      } : {
+        query: filter.native$[0],
+        data: filter.native$.slice(1)
+      }
+      const query = await QBuilder(knex).raw(argsNative)
+      return query.rows.map((row: any) => intern.makeent(ent, row))
+    }
 
     let sort = null
     let skip = null
@@ -63,12 +58,12 @@ export class intern {
       ...(limit && {limit})
     }
     
-    const query = await qBuilder(knex).select(args)
+    const query = await QBuilder(knex).select(args)
     return query.map((row: any) => intern.makeent(ent, row))
 
-  }
+  },
 
-  static async firstKnex(ent: any, q: any, knex: any): Promise<any> {
+  async firstKnex(knex: any, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     let sort = null
@@ -102,26 +97,41 @@ export class intern {
       skip
     }
 
-    const query = await qBuilder(knex).first(args)
+    const query = await QBuilder(knex).first(args)
     return intern.makeent(ent, query)
-  }
+  },
 
-  static async insertKnex(ent: any, knex: any): Promise<any> {
+   async insertKnex(knex: any, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
+
+    // ----------------- TODO - UPSERT -----------------//
+    // const { upsert$ } = q ? q : null
+
+    // if (upsert$) {
+    //   const args = {
+    //     table_name: ent_table,
+    //     data: {...entp, id: entp.id ? entp.id : Uuid()},
+    //     upsert: upsert$.length == 1 ? upsert$[0] : upsert$
+    //   }
+      
+    //   const query = await QBuilder(knex).insert(args)
+    //   const formattedQuery = query.length == 1 ? query[0] : query
+  
+    //   return intern.makeent(ent, formattedQuery)
+    // }
 
     const args = {
       table_name: ent_table,
       data: {...entp, id: entp.id ? entp.id : Uuid()},
     }
 
-    const query = await qBuilder(knex).insert(args)
+    const query = await QBuilder(knex).insert(args)
     const formattedQuery = query.length == 1 ? query[0] : query
-
     return intern.makeent(ent, formattedQuery)
-  }
+  },
 
-  static async updateKnex(ent: any, knex: any): Promise<any> {
+   async updateKnex(knex: any, ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -133,12 +143,13 @@ export class intern {
       id: id
     }
 
-    const query = await qBuilder(knex).update(args)
+    const query = await QBuilder(knex).update(args)
     const formattedQuery = query.length == 1 ? query[0] : query
     return intern.makeent(ent, formattedQuery)
-  }
+  },
 
-  static async removeKnex(ent: any, q: any, knex: any): Promise<any> {
+  //Needs to be refactored to a better way/code
+   async removeKnex(knex: any, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -151,30 +162,39 @@ export class intern {
     }
 
     let sort = null
+    let limit = null
     let skip = null
+    let all = null
     let first = null
 
     if (filter.limit$){
+      limit = filter.limit$ > 0 ? filter.limit$ : null
       delete filter.limit$
     }
     
     if (filter.skip$){
-      skip = filter.skip$
+      skip = filter.skip$ > 0 ? filter.skip$ : 0
       delete filter.skip$
     }
 
-    if (filter.sort$) {
+    if (filter.all$){
+      all = filter.all$
+      delete filter.all$
+    }
 
-      const firstKey = Object.keys(filter.sort$)[0];
+    if (filter.sort$ || (all && skip)) {
 
-      const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
-
-      sort = {
-        field: firstKey,
-        order: sortValue
+      if (filter.sort$){
+        const firstKey = Object.keys(filter.sort$)[0];
+        const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
+        sort = {
+          field: firstKey,
+          order: sortValue
+        }
       }
 
       delete filter.sort$
+      delete filter.all$
 
       const argsFind = {
         table_name: ent_table,
@@ -183,7 +203,32 @@ export class intern {
         skip
       }
 
-      first = await qBuilder(knex).first(argsFind)
+      if (all) {
+        const argsSelect = {
+          table_name: ent_table,
+          data : filter,
+          sort,
+          skip,
+          limit
+        }
+
+        const ids = await QBuilder(knex).select(argsSelect)
+
+        const argsDelete = {
+          table_name: ent_table,
+          filter: ids.map((id: any) => id.id),
+          isLoad,
+          skip,
+          isArray: true
+        }
+
+
+        await QBuilder(knex).delete(argsDelete)
+        return null
+
+      }
+
+      first = await QBuilder(knex).first(argsFind)
 
     }
 
@@ -194,21 +239,22 @@ export class intern {
       skip
     }
     
-    if (filter.all$) {
-      await qBuilder(knex).truncate(args)
+    if (all) {
+      await QBuilder(knex).truncate(args)
       //Knex returns the number of rows affected if delete is ok
       return null
     }
-    
-    const query = await qBuilder(knex).delete(args)
+
+
+    const query = await QBuilder(knex).delete(args)
 
     //Knex returns the number of rows affected if delete is ok
     const result = typeof query == 'number' ? null : 'Error'
     const formattedQuery = query.length == 1 ? query[0] : query
     return isLoad ? intern.makeent(ent, formattedQuery) : result
-  }
+  },
 
-  static async upsertKnex(ent: any, data: any, q: any, knex: any): Promise<any> {
+   async upsertKnex(knex: any, ent: any, data: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -217,17 +263,17 @@ export class intern {
       id: q
     }
 
-    const query = qBuilder(knex).upsert(args)
+    const query = QBuilder(knex).upsert(args)
     return query
-  }
+  },
 
-  static tablenameUtil(ent: any) {
+   tablenameUtil(ent: any) {
     const canon = ent.canon$({ object: true })
 
     return (canon.base ? canon.base + '_' : '') + canon.name
-  }
+  },
 
-  static makeentp(ent: any) {
+   makeentp(ent: any) {
     const fields = ent.fields$()
     const entp: any = {}
 
@@ -240,21 +286,21 @@ export class intern {
     }
 
     return entp
-  }
+  },
 
-  static isObject(x: any) {
+   isObject(x: any) {
     return null != x && '[object Object]' === toString.call(x)
-  }
+  },
 
-  static isObjectEmpty(object: any) {  
+   isObjectEmpty(object: any) {  
     return Object.keys(object).length === 0
-  }
+  },
 
-  static isDate(x: any) {
+   isDate(x: any) {
     return '[object Date]' === toString.call(x)
-  }
+  },
 
-  static getConfig(spec: any) {
+   getConfig(spec: any) {
     let conf
 
     if ('string' === typeof spec) {
@@ -285,19 +331,9 @@ export class intern {
     conf.password = conf.password || conf.pass
 
     return conf
-  }
+  },
 
-  static msgForGenerateId(args: any) {
-    const { role, target } = args
-    return { role, target, hook: 'generate_id' }
-  }
-
-  static generateId() {
-    const uuidV4 = Uuid()
-    return uuidV4
-  }
-
-  static makeent(ent: any, row: any) {
+   makeent(ent: any, row: any) {
     if (!row) {
       return null
     }
@@ -324,22 +360,32 @@ export class intern {
     }
 
     return ent.make$(entp)
-  }
+  },
 
-  static async isUpdate(ent: any, knex: any) {
+   async isUpdate(knex: any, ent: any, q: any) {
+    // ------------- TODO - UPSERT ----------------//
+    // const isUpsert = q.upsert$ ? true : false
+
+    // if (isUpsert) {
+    //   delete q.upsert$
+    // }
+
+    // if (!ent.id && !isUpsert) {
+    //   return false
+    // }
 
     if (!ent.id) {
       return false
     }
-    
-    const id = {
-      id: ent.id
-    }
 
-    const rowExist = await intern.firstKnex(ent, id, knex)
+    const id = { id: ent.id }
+
+    const rowExist = await intern.firstKnex(knex, ent, id)
     const isUpdate = rowExist ? true : false
 
     return isUpdate
   }
 
 }
+
+export default intern
