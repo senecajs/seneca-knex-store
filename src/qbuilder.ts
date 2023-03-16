@@ -1,4 +1,4 @@
-function qBuilder(knex: any) {
+function QBuilder(knex: any) {
   const Q = {
     upsert(args: { table_name: string; data: any; id: string }) {
       return knex(args.table_name).upsert(args.data, args.id)
@@ -9,21 +9,29 @@ function qBuilder(knex: any) {
         .update(args.data)
         .returning('*')
     },
-    insert(args: { table_name: string; data: any }) {
+    insert(args: { table_name: string; data: any, upsert?: any }) {
+      if (args.upsert) {
+        return knex(args.table_name).insert(args.data).onConflict(args.upsert).merge()
+      }
       return knex(args.table_name).insert(args.data).returning('*')
     },
     delete(args: {
       table_name: string
       filter: string
-      isLoad: boolean,
+      isLoad: boolean
       skip?: number | null
+      isArray?: boolean
     }) {
       let query = knex(args.table_name)
-      if (args.skip) {
-        query = query.offset(args.skip)
-      }
+
       if (args.isLoad) {
         return knex(args.table_name).where(args.filter).del().returning('*')
+      }
+      if (args.isArray) {
+        return knex(args.table_name).whereIn('id', args.filter).delete()
+      }
+      if (args.skip) {
+        query = query.offset(args.skip)
       }
       return query.where(args.filter).del()
     },
@@ -33,7 +41,7 @@ function qBuilder(knex: any) {
     select(args: {
       table_name: string
       data: any
-      isArray: boolean
+      isArray?: boolean
       sort: { field: string; order: string } | null
       skip?: number | null
       limit?: number | null
@@ -51,7 +59,7 @@ function qBuilder(knex: any) {
       if (args.isArray) {
         return query.whereIn('id', args.data)
       }
-      if(args.data) {
+      if (args.data) {
         return query.where(args.data)
       }
       return query
@@ -71,9 +79,12 @@ function qBuilder(knex: any) {
       }
       return knex(args.table_name).where(args.filter).offset(args.skip).first()
     },
+    raw(args: { query: string; data?: any }) {
+      return knex.raw(args.query, args.data)
+    }
   }
 
   return Q
 }
 
-export default qBuilder
+export default QBuilder
