@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function qBuilder(knex) {
+function QBuilder(knex) {
     const Q = {
         upsert(args) {
             return knex(args.table_name).upsert(args.data, args.id);
@@ -12,15 +12,21 @@ function qBuilder(knex) {
                 .returning('*');
         },
         insert(args) {
+            if (args.upsert) {
+                return knex(args.table_name).insert(args.data).onConflict(args.upsert).merge();
+            }
             return knex(args.table_name).insert(args.data).returning('*');
         },
         delete(args) {
             let query = knex(args.table_name);
-            if (args.skip) {
-                query = query.offset(args.skip);
-            }
             if (args.isLoad) {
                 return knex(args.table_name).where(args.filter).del().returning('*');
+            }
+            if (args.isArray) {
+                return knex(args.table_name).whereIn('id', args.filter).delete();
+            }
+            if (args.skip) {
+                query = query.offset(args.skip);
             }
             return query.where(args.filter).del();
         },
@@ -56,8 +62,11 @@ function qBuilder(knex) {
             }
             return knex(args.table_name).where(args.filter).offset(args.skip).first();
         },
+        raw(args) {
+            return knex.raw(args.query, args.data);
+        }
     };
     return Q;
 }
-exports.default = qBuilder;
+exports.default = QBuilder;
 //# sourceMappingURL=qbuilder.js.map

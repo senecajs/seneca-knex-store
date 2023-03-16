@@ -1,4 +1,4 @@
-declare function qBuilder(knex: any): {
+declare function QBuilder(knex: any): {
     upsert(args: {
         table_name: string;
         data: any;
@@ -12,12 +12,14 @@ declare function qBuilder(knex: any): {
     insert(args: {
         table_name: string;
         data: any;
+        upsert?: any;
     }): any;
     delete(args: {
         table_name: string;
         filter: string;
         isLoad: boolean;
         skip?: number | null;
+        isArray?: boolean;
     }): any;
     truncate(args: {
         table_name: string;
@@ -25,7 +27,7 @@ declare function qBuilder(knex: any): {
     select(args: {
         table_name: string;
         data: any;
-        isArray: boolean;
+        isArray?: boolean;
         sort: {
             field: string;
             order: string;
@@ -42,5 +44,9 @@ declare function qBuilder(knex: any): {
         } | null;
         skip?: number | null;
     }): any;
+    raw(args: {
+        query: string;
+        data?: any;
+    }): any;
 };
-export default qBuilder;
+export default QBuilder;

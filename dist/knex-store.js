@@ -4,8 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 /* Copyright (c) 2010-2022 Richard Rodger and other contributors, MIT License */
-const intern_1 = require("./intern");
-const { asyncMethod } = intern_1.intern;
+const intern_1 = __importDefault(require("./intern"));
 const knex_1 = __importDefault(require("knex"));
 const STORE_NAME = 'knex-store';
 function knex_store(options) {
@@ -22,7 +21,7 @@ function knex_store(options) {
         // The name of the plugin, this is what is the name you would
         // use in seneca.use(), eg seneca.use('knex-store').
         name: STORE_NAME,
-        save: asyncMethod(async function (msg) {
+        save: async function (msg, reply) {
             const { ent, q } = msg;
             // Create a new entity
             async function do_create() {
@@ -32,7 +31,7 @@ function knex_store(options) {
                     if (ent.id$) {
                         newEnt.id = ent.id$;
                     }
-                    const doCreate = await intern_1.intern.insertKnex(newEnt, db);
+                    const doCreate = await intern_1.default.insertKnex(db, newEnt, q);
                     return doCreate;
                 }
                 catch (err) {
@@ -41,30 +40,30 @@ function knex_store(options) {
             }
             // Save an existing entity
             async function do_save() {
-                const doSave = await intern_1.intern.updateKnex(ent, db);
+                const doSave = await intern_1.default.updateKnex(db, ent);
                 // call the reply callback with the
                 // updated entity
                 return doSave;
             }
-            const save = (await intern_1.intern.isUpdate(ent, db)) ? do_save() : do_create();
-            return save;
-        }),
+            const save = (await intern_1.default.isUpdate(db, ent, q)) ? await do_save() : await do_create();
+            return reply(null, save);
+        },
         load: async function (msg, reply) {
             const qent = msg.qent;
             const q = msg.q || {};
-            const load = await intern_1.intern.firstKnex(qent, q, db);
+            const load = await intern_1.default.firstKnex(db, qent, q);
             reply(null, load);
         },
         list: async function (msg, reply) {
             const qent = msg.qent;
             const q = msg.q || {};
-            const list = await intern_1.intern.findKnex(qent, q, db);
+            const list = await intern_1.default.findKnex(db, qent, q);
             reply(null, list);
         },
         remove: async function (msg, reply) {
             const qent = msg.qent;
             const q = msg.q || {};
-            const remove = await intern_1.intern.removeKnex(qent, q, db);
+            const remove = await intern_1.default.removeKnex(db, qent, q);
             reply(null, remove);
         },
         native: function (_msg, reply) {
