@@ -1,7 +1,7 @@
 const Seneca = require('seneca')
 const Lab = require('@hapi/lab')
 const lab = (exports.lab = Lab.script())
-const { describe, it } = lab
+const { before, beforeEach, afterEach, describe, it } = lab
 const { expect } = require('@hapi/code')
 const Shared = require('seneca-store-test')
 const Async = require('async')
@@ -132,6 +132,8 @@ function smokeTests(senecaForTest) {
       .entity('foo')
       .data$({ id: 'will-be-saved', p1: 'z1', p2: 'z2', p3: 'z3' })
       .save$()
+
+    console.log('foo1', foo1)
     expect(foo1.id).to.exist()
     expect(typeof foo1.id).to.equal('string')
     expect(foo1.p1).to.equal('z1')
@@ -139,6 +141,7 @@ function smokeTests(senecaForTest) {
     expect(foo1.p3).to.equal('z3')
 
     foo1_id = foo1.id
+    console.log('foo1_id', foo1_id)
   })
 
   it('load', async () => {
@@ -186,12 +189,104 @@ function smokeTests(senecaForTest) {
   })
 }
 
-function makeSenecaForTest(DbConfig) {
+describe('transaction', function () {
+  // eslint-disable-next-line max-len
+  const si = makeSenecaForTest(DbConfigPG, {entity_opts: { transaction: {active:true} }})
+
+  before(() => {
+    return new Promise(done => {
+      si.ready(done)
+    })
+  })
+
+  beforeEach(clearDb(si))
+
+  afterEach(clearDb(si))
+
+
+  it('happy', async () => {
+
+    let s0 = await si.entity.begin()
+    await s0.entity('foo').data$({p1:'t1'}).save$()
+    let tx0 = await s0.entity.end()
+    
+    console.log(tx0)
+    console.dir(tx0.trace)
+
+    expect(tx0).include({
+      handle: { name: 'postgres' },
+      result: { done: true },
+    })
+
+    let foos = await si.entity('foo').list$()
+    expect(foos.length).equal(1)
+    expect(foos[0].p1).equal('t1')
+  })
+
+  
+  it('rollback', async () => {
+    let s0 = await si.entity.begin()
+
+    await s0.entity('foo').data$({p1:'t1'}).save$()
+
+    let tx0 = await s0.entity.rollback()
+
+    expect(tx0).include({
+      handle: { name: 'postgres' },
+      result: { done: false },
+    })
+    // console.log(tx0)
+    // console.dir(tx0.trace)
+
+    let foos = await si.entity('foo').list$()
+    expect(foos.length).equal(0)
+  })
+
+
+  it('rollback-on-error', async () => {
+    si.message('foo:red', async function foo_red(msg) {
+      await this.entity('foo').data$({p1:'t1'}).save$()
+      throw new Error('BAD')
+      // await this.entity('foo').data$({p1:'t2'}).save$()
+      // return {ok:true}
+    })
+
+    let s0 = await si.entity.begin()
+
+    // console.log(s0.entity)
+    
+    try {
+      await s0.post('foo:red')
+      expect(false).toEqual(true)
+    }
+    catch(err) {
+      // console.log(err.message)
+
+      // Data NOT saved as rolled back
+      let foos = await s0.entity('foo').list$()
+      // console.log('FOOS', foos)
+      expect(foos.length).equal(0)
+    
+      let t0 = s0.entity.state()
+      // console.log(t0.transaction.trace)
+      expect(t0.transaction.trace.length).equal(1)
+    }
+  })
+  // TODO: preserved in children
+})
+
+function makeSenecaForTest(DbConfig, opts = {}) {
   const si = Seneca().test()
 
+  const { entity_opts = {}, postgres_opts = {} } = opts
+
   si.use('promisify')
-  si.use('entity', { mem_store: false })
-  si.use(KnexStore, DbConfig)
+  si.use('seneca-entity', { 
+    mem_store: false,
+    ...entity_opts, 
+  })
+  
+  si.use(KnexStore, { ...DbConfig, ...postgres_opts})
 
   return si
 }
