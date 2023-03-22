@@ -36,8 +36,9 @@ function knex_store(this: any, options: Options) {
 
     save: async function (this: any, msg: any, reply: any) {
         const { ent, q } = msg
+        
+        const txDB = await intern.getKnexClient(db, seneca, msg)
 
-        // Create a new entity
         async function do_create() {
           // create a new entity
           try {
@@ -47,7 +48,7 @@ function knex_store(this: any, options: Options) {
               newEnt.id = ent.id$
             }
 
-            const doCreate = await intern.insertKnex(db, newEnt, q)
+            const doCreate = await intern.insertKnex(txDB, newEnt)
 
             return doCreate
           } catch (err) {
@@ -57,13 +58,14 @@ function knex_store(this: any, options: Options) {
 
         // Save an existing entity
         async function do_save() {
-          const doSave = await intern.updateKnex(db , ent)
+          const doSave = await intern.updateKnex(txDB , ent)
           // call the reply callback with the
           // updated entity
           return doSave
         }
 
-        const save = (await intern.isUpdate(db, ent, q)) ? await do_save() : await do_create()
+
+        const save = (await intern.isUpdate(txDB, ent, q)) ? await do_save() : await do_create()
         return reply(null, save)
     },
 
@@ -71,14 +73,19 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const load = await intern.firstKnex(db, qent, q)
+      const txDB = await intern.getKnexClient(db, seneca, msg)
+
+      const load = await intern.firstKnex(txDB, qent, q)
       reply(null, load)
     },
 
     list: async function (msg: any, reply: any) {
       const qent = msg.qent
       const q = msg.q || {}
-      const list = await intern.findKnex(db, qent, q)
+
+      const txDB = await intern.getKnexClient(db, seneca, msg)
+      
+      const list = await intern.findKnex(txDB, qent, q)
       reply(null, list)
     },
 
@@ -86,7 +93,9 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const remove = await intern.removeKnex(db, qent, q)
+      const txDB = await intern.getKnexClient(db, seneca, msg)
+
+      const remove = await intern.removeKnex(txDB, qent, q)
       reply(null, remove)
     },
 
@@ -111,6 +120,38 @@ function knex_store(this: any, options: Options) {
       return configure(options, done)
     }
   )
+
+  seneca.add('sys:entity,transaction:begin', async function(this: any, msg: any,reply: any) {
+      reply({
+        get_handle: () => ({name: 'knex' })
+      })
+  })
+
+  seneca.add('sys:entity,transaction:end', function(msg: any,reply: any) {
+    let transaction = msg.details()
+    let client = transaction.client
+
+    client.query('COMMIT')
+      .then(()=>{
+        reply({
+          done: true
+        })
+      })
+      .catch((err: any)=>reply(err))
+  })
+
+  seneca.add('sys:entity,transaction:rollback', function(msg: any,reply: any) {
+    let transaction = msg.details()
+    let client = transaction.client
+
+    client.query('ROLLBACK')
+      .then(()=>{
+        reply({
+          done: false, rollback: true
+        })
+      })
+      .catch((err: any)=>reply(err))
+  })
 
   // We don't return the store itself, it will self load into Seneca via the
   // init() function. Instead we return a simple object with the stores name
