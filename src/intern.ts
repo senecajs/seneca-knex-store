@@ -1,6 +1,5 @@
 import QBuilder from './qbuilder'
 const Uuid = require('uuid').v4
-import Assert from 'assert'
 
 const intern = {
 
@@ -101,7 +100,7 @@ const intern = {
     return intern.makeent(ent, query)
   },
 
-   async insertKnex(knex: any, ent: any, q: any): Promise<any> {
+   async insertKnex(knex: any, ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -128,6 +127,7 @@ const intern = {
 
     const query = await QBuilder(knex).insert(args)
     const formattedQuery = query.length == 1 ? query[0] : query
+    console.log('intern.makeent(ent, formattedQuery)', intern.makeent(ent, formattedQuery))
     return intern.makeent(ent, formattedQuery)
   },
 
@@ -384,8 +384,33 @@ const intern = {
     const isUpdate = rowExist ? true : false
 
     return isUpdate
-  }
+  },
 
+  buildCtx(seneca: any, msg: any, meta: any) {
+    let ctx: any = {}
+    let transaction = seneca.entity.state().transaction
+
+    if(transaction && !transaction.finish && false !== msg.transaction$) {
+      transaction.trace.push({
+        when: Date.now(),
+        msg,
+        meta,
+      })
+      ctx.transaction = transaction
+      ctx.client = transaction.client
+    }
+    
+    return ctx
+  },
+  async getKnexClient(knex: any, seneca: any, msg: any) {
+    let transaction = seneca.entity.state().transaction
+
+    if(transaction && !transaction.finish && false !== msg.transaction$) {
+      const trx = await knex.transaction();
+      return trx
+    }
+    return knex
+  }
 }
 
 export default intern
