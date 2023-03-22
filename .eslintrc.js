@@ -4,7 +4,7 @@ module.exports = {
     node: true
   },
   parserOptions: {
-    ecmaVersion: 8
+    ecmaVersion: 2020,
   },
   rules: {
     'no-console': 0,
@@ -14,5 +14,5 @@ module.exports = {
   },
   globals: {
     Promise: 'readonly'
-  }
+  },
 }
