@@ -35,9 +35,11 @@ function knex_store(this: any, options: Options) {
     name: STORE_NAME,
 
     save: async function (this: any, msg: any, reply: any) {
+        const seneca = this
         const { ent, q } = msg
         
         const txDB = await intern.getKnexClient(db, seneca, msg)
+        console.log('seneca.entity.state().transaction', seneca.entity.state())
 
         async function do_create() {
           // create a new entity
@@ -70,6 +72,7 @@ function knex_store(this: any, options: Options) {
     },
 
     load: async function (this: any, msg: any, reply: any) {
+      const seneca = this
       const qent = msg.qent
       const q = msg.q || {}
 
@@ -79,7 +82,8 @@ function knex_store(this: any, options: Options) {
       reply(null, load)
     },
 
-    list: async function (msg: any, reply: any) {
+    list: async function (this: any, msg: any, reply: any) {
+      const seneca = this
       const qent = msg.qent
       const q = msg.q || {}
 
@@ -90,6 +94,7 @@ function knex_store(this: any, options: Options) {
     },
 
     remove: async function (this: any, msg: any, reply: any) {
+      const seneca = this
       const qent = msg.qent
       const q = msg.q || {}
 
@@ -122,36 +127,50 @@ function knex_store(this: any, options: Options) {
   )
 
   seneca.add('sys:entity,transaction:begin', async function(this: any, msg: any,reply: any) {
+    await db.transaction(async (trx: any) => {
       reply({
-        get_handle: () => ({name: 'knex' })
+        get_handle: () => (trx)
       })
+    })
   })
 
-  seneca.add('sys:entity,transaction:end', function(msg: any,reply: any) {
-    let transaction = msg.details()
-    let client = transaction.client
+  seneca.add(
+    'sys:entity,transaction:end',
+    async function (msg: any, reply: any) {
+      const transaction = msg.details()
+      const client = transaction.handle
 
-    client.query('COMMIT')
-      .then(()=>{
-        reply({
-          done: true
-        })
-      })
-      .catch((err: any)=>reply(err))
-  })
+      try {
+        const commit = await client.isCompleted()
 
-  seneca.add('sys:entity,transaction:rollback', function(msg: any,reply: any) {
-    let transaction = msg.details()
-    let client = transaction.client
+        if (commit) {
+          reply({
+            done: true,
+          })
+        }
+      } catch (err) {
+        reply(err)
+      }
+    }
+  )
 
-    client.query('ROLLBACK')
-      .then(()=>{
-        reply({
-          done: false, rollback: true
-        })
-      })
-      .catch((err: any)=>reply(err))
-  })
+  seneca.add(
+    'sys:entity,transaction:rollback',
+    async function (msg: any, reply: any) {
+      const transaction = msg.details()
+      const client = transaction.handle
+      console.log('client', client)
+      try {
+        await client.rollback();
+          reply({
+            done: false,
+            rollback: true,
+          })
+      } catch (err) {
+        reply(err)
+      }
+    }
+  )
 
   // We don't return the store itself, it will self load into Seneca via the
   // init() function. Instead we return a simple object with the stores name
