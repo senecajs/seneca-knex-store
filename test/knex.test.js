@@ -125,7 +125,7 @@ function senecaStoreSQLTests(senecaForTest) {
 // }
 
 function smokeTests(senecaForTest) {
-  // let foo1_id
+  let foo1_id
 
   it('save', async () => {
     const foo1 = await senecaForTest
@@ -139,52 +139,52 @@ function smokeTests(senecaForTest) {
     expect(foo1.p2).to.equal('z2')
     expect(foo1.p3).to.equal('z3')
 
-    // foo1_id = foo1.id
+    foo1_id = foo1.id
   })
 
-  // it('load', async () => {
-  //   const row = await senecaForTest.entity('foo').load$({ id: foo1_id })
+  it('load', async () => {
+    const row = await senecaForTest.entity('foo').load$({ id: foo1_id })
 
-  //   expect(row.p1).to.exist()
-  //   expect(typeof row.p1).to.equal('string')
-  //   expect(row.p1).to.equal('z1')
-  //   expect(row.p2).to.equal('z2')
-  //   expect(row.p3).to.equal('z3')
-  // })
+    expect(row.p1).to.exist()
+    expect(typeof row.p1).to.equal('string')
+    expect(row.p1).to.equal('z1')
+    expect(row.p2).to.equal('z2')
+    expect(row.p3).to.equal('z3')
+  })
 
-  // it('list', async () => {
-  //   const rows = await senecaForTest.entity('foo').list$({})
+  it('list', async () => {
+    const rows = await senecaForTest.entity('foo').list$({})
 
-  //   expect(rows.length).greaterThan(0)
-  // })
+    expect(rows.length).greaterThan(0)
+  })
 
-  // it('filter', async () => {
-  //   const row = await senecaForTest.entity('foo').load$({ p1: 'z1' })
+  it('filter', async () => {
+    const row = await senecaForTest.entity('foo').load$({ p1: 'z1' })
 
-  //   expect(row.p1).to.equal('z1')
-  //   expect(row.p2).to.equal('z2')
-  //   expect(row.p3).to.equal('z3')
-  // })
+    expect(row.p1).to.equal('z1')
+    expect(row.p2).to.equal('z2')
+    expect(row.p3).to.equal('z3')
+  })
 
-  // it('update', async () => {
-  //   const foo1 = await senecaForTest
-  //     .entity('foo')
-  //     .data$({ p1: 't4', id: foo1_id })
-  //     .save$()
+  it('update', async () => {
+    const foo1 = await senecaForTest
+      .entity('foo')
+      .data$({ p1: 't4', id: foo1_id })
+      .save$()
 
-  //   expect(foo1.id).to.exist()
-  //   expect(typeof foo1.id).to.equal('string')
-  //   expect(foo1.p1).to.equal('t4')
-  // })
+    expect(foo1.id).to.exist()
+    expect(typeof foo1.id).to.equal('string')
+    expect(foo1.p1).to.equal('t4')
+  })
 
-  // it('remove', async () => {
-  //   const del = await senecaForTest
-  //     .entity('foo')
-  //     .data$({ id: foo1_id })
-  //     .remove$()
+  it('remove', async () => {
+    const del = await senecaForTest
+      .entity('foo')
+      .data$({ id: foo1_id })
+      .remove$()
 
-  //   expect(del).to.equal(null)
-  // })
+    expect(del).to.equal(null)
+  })
 }
 
 describe('transaction', function () {
