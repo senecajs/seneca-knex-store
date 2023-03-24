@@ -4,7 +4,6 @@ const Uuid = require('uuid').v4
 const intern = {
 
   async findKnex(knex: any, ent: any, q: any): Promise<any> {
-    console.log('knex', knex)
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -59,7 +58,6 @@ const intern = {
     }
     
     const query = await QBuilder(knex).select(args)
-    console.log('query', query)
     return query.map((row: any) => intern.makeent(ent, row))
 
   },
@@ -128,7 +126,6 @@ const intern = {
     }
 
     const query = await QBuilder(knex).insert(args)
-    console.log('query', query)
     const formattedQuery = query.length == 1 ? query[0] : query
     return intern.makeent(ent, formattedQuery)
   },
@@ -387,28 +384,20 @@ const intern = {
 
     return isUpdate
   },
-
-  buildCtx(seneca: any, msg: any, meta: any) {
-    let ctx: any = {}
+  
+  async getKnexClient(knex: any, seneca: any, msg: any, meta: any) {
     let transaction = seneca.entity.state().transaction
 
     if(transaction && !transaction.finish && false !== msg.transaction$) {
+      const trx = await knex.transaction()
+
       transaction.trace.push({
         when: Date.now(),
         msg,
         meta,
       })
-      ctx.transaction = transaction
-      ctx.client = transaction.client
-    }
-    
-    return ctx
-  },
-  async getKnexClient(knex: any, seneca: any, msg: any) {
-    let transaction = seneca.entity.state().transaction
+      transaction.client = trx
 
-    if(transaction && !transaction.finish && false !== msg.transaction$) {
-      const trx = await knex.transaction();
       return trx
     }
     return knex
