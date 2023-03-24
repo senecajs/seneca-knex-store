@@ -13,7 +13,6 @@ declare const intern: {
     getConfig(spec: any): any;
     makeent(ent: any, row: any): any;
     isUpdate(knex: any, ent: any, q: any): Promise<boolean>;
-    buildCtx(seneca: any, msg: any, meta: any): any;
-    getKnexClient(knex: any, seneca: any, msg: any): Promise<any>;
+    getKnexClient(knex: any, seneca: any, msg: any, meta: any): Promise<any>;
 };
 export default intern;

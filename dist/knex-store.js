@@ -22,8 +22,9 @@ function knex_store(options) {
         // use in seneca.use(), eg seneca.use('knex-store').
         name: STORE_NAME,
         save: async function (msg, reply) {
+            const seneca = this;
             const { ent, q } = msg;
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg);
+            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
             async function do_create() {
                 // create a new entity
                 try {
@@ -49,23 +50,26 @@ function knex_store(options) {
             return reply(null, save);
         },
         load: async function (msg, reply) {
+            const seneca = this;
             const qent = msg.qent;
             const q = msg.q || {};
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg);
+            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
             const load = await intern_1.default.firstKnex(txDB, qent, q);
             reply(null, load);
         },
         list: async function (msg, reply) {
+            const seneca = this;
             const qent = msg.qent;
             const q = msg.q || {};
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg);
+            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
             const list = await intern_1.default.findKnex(txDB, qent, q);
             reply(null, list);
         },
         remove: async function (msg, reply) {
+            const seneca = this;
             const qent = msg.qent;
             const q = msg.q || {};
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg);
+            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
             const remove = await intern_1.default.removeKnex(txDB, qent, q);
             reply(null, remove);
         },
@@ -78,38 +82,43 @@ function knex_store(options) {
             });
         },
     };
-    // Seneca will call init:plugin-name for us. This makes
-    // this action a great place to do any setup.
     const meta = seneca.store.init(seneca, options, store);
     seneca.add({ init: store.name, tag: meta.tag }, function (_msg, done) {
         return configure(options, done);
     });
     seneca.add('sys:entity,transaction:begin', async function (msg, reply) {
         reply({
-            get_handle: () => ({ name: 'knex' })
+            get_handle: () => ({ id: this.util.Nid(), name: 'knex' })
         });
     });
-    seneca.add('sys:entity,transaction:end', function (msg, reply) {
-        let transaction = msg.details();
-        let client = transaction.client;
-        client.query('COMMIT')
-            .then(() => {
-            reply({
-                done: true
-            });
-        })
-            .catch((err) => reply(err));
+    seneca.add('sys:entity,transaction:end', async function (msg, reply) {
+        const transaction = msg.details();
+        const client = transaction.client;
+        try {
+            const commit = await client.commit();
+            if (commit) {
+                reply({
+                    done: true,
+                });
+            }
+        }
+        catch (err) {
+            reply(err);
+        }
     });
-    seneca.add('sys:entity,transaction:rollback', function (msg, reply) {
-        let transaction = msg.details();
-        let client = transaction.client;
-        client.query('ROLLBACK')
-            .then(() => {
+    seneca.add('sys:entity,transaction:rollback', async function (msg, reply) {
+        const transaction = msg.details();
+        const client = transaction.client;
+        try {
+            await client.rollback();
             reply({
-                done: false, rollback: true
+                done: false,
+                rollback: true,
             });
-        })
-            .catch((err) => reply(err));
+        }
+        catch (err) {
+            reply(err);
+        }
     });
     // We don't return the store itself, it will self load into Seneca via the
     // init() function. Instead we return a simple object with the stores name

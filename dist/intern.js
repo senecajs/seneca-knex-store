@@ -102,7 +102,6 @@ const intern = {
         };
         const query = await (0, qbuilder_1.default)(knex).insert(args);
         const formattedQuery = query.length == 1 ? query[0] : query;
-        console.log('intern.makeent(ent, formattedQuery)', intern.makeent(ent, formattedQuery));
         return intern.makeent(ent, formattedQuery);
     },
     async updateKnex(knex, ent) {
@@ -301,24 +300,16 @@ const intern = {
         const isUpdate = rowExist ? true : false;
         return isUpdate;
     },
-    buildCtx(seneca, msg, meta) {
-        let ctx = {};
+    async getKnexClient(knex, seneca, msg, meta) {
         let transaction = seneca.entity.state().transaction;
         if (transaction && !transaction.finish && false !== msg.transaction$) {
+            const trx = await knex.transaction();
             transaction.trace.push({
                 when: Date.now(),
                 msg,
                 meta,
             });
-            ctx.transaction = transaction;
-            ctx.client = transaction.client;
-        }
-        return ctx;
-    },
-    async getKnexClient(knex, seneca, msg) {
-        let transaction = seneca.entity.state().transaction;
-        if (transaction && !transaction.finish && false !== msg.transaction$) {
-            const trx = await knex.transaction();
+            transaction.client = trx;
             return trx;
         }
         return knex;
