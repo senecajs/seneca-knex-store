@@ -38,8 +38,7 @@ function knex_store(this: any, options: Options) {
         const seneca = this
         const { ent, q } = msg
         
-        const txDB = await intern.getKnexClient(db, seneca, msg)
-        console.log('seneca.entity.state().transaction', seneca.entity.state())
+        const txDB = await intern.getKnexClient(db, seneca, msg, meta)
 
         async function do_create() {
           // create a new entity
@@ -76,7 +75,7 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const txDB = await intern.getKnexClient(db, seneca, msg)
+      const txDB = await intern.getKnexClient(db, seneca, msg, meta)
 
       const load = await intern.firstKnex(txDB, qent, q)
       reply(null, load)
@@ -87,7 +86,7 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const txDB = await intern.getKnexClient(db, seneca, msg)
+      const txDB = await intern.getKnexClient(db, seneca, msg, meta)
       
       const list = await intern.findKnex(txDB, qent, q)
       reply(null, list)
@@ -98,7 +97,7 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const txDB = await intern.getKnexClient(db, seneca, msg)
+      const txDB = await intern.getKnexClient(db, seneca, msg, meta)
 
       const remove = await intern.removeKnex(txDB, qent, q)
       reply(null, remove)
@@ -115,8 +114,6 @@ function knex_store(this: any, options: Options) {
     },
   }
 
-  // Seneca will call init:plugin-name for us. This makes
-  // this action a great place to do any setup.
   const meta = seneca.store.init(seneca, options, store)
 
   seneca.add(
@@ -127,21 +124,19 @@ function knex_store(this: any, options: Options) {
   )
 
   seneca.add('sys:entity,transaction:begin', async function(this: any, msg: any,reply: any) {
-    await db.transaction(async (trx: any) => {
       reply({
-        get_handle: () => (trx)
+        get_handle: () => ({ id: this.util.Nid(), name: 'knex' })
       })
-    })
   })
 
   seneca.add(
     'sys:entity,transaction:end',
     async function (msg: any, reply: any) {
       const transaction = msg.details()
-      const client = transaction.handle
+      const client = transaction.client
 
       try {
-        const commit = await client.isCompleted()
+        const commit = await client.commit()
 
         if (commit) {
           reply({
@@ -158,8 +153,7 @@ function knex_store(this: any, options: Options) {
     'sys:entity,transaction:rollback',
     async function (msg: any, reply: any) {
       const transaction = msg.details()
-      const client = transaction.handle
-      console.log('client', client)
+      const client = transaction.client
       try {
         await client.rollback();
           reply({
