@@ -38,7 +38,7 @@ function knex_store(this: any, options: Options) {
         const seneca = this
         const { ent, q } = msg
         
-        const txDB = await intern.getKnexClient(db, seneca, msg, meta)
+        const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
 
         async function do_create() {
           // create a new entity
@@ -49,7 +49,7 @@ function knex_store(this: any, options: Options) {
               newEnt.id = ent.id$
             }
 
-            const doCreate = await intern.insertKnex(txDB, newEnt)
+            const doCreate = await intern.insertKnex(knexClient, newEnt)
 
             return doCreate
           } catch (err) {
@@ -59,14 +59,14 @@ function knex_store(this: any, options: Options) {
 
         // Save an existing entity
         async function do_save() {
-          const doSave = await intern.updateKnex(txDB , ent)
+          const doSave = await intern.updateKnex(knexClient , ent)
           // call the reply callback with the
           // updated entity
           return doSave
         }
 
 
-        const save = (await intern.isUpdate(txDB, ent, q)) ? await do_save() : await do_create()
+        const save = (await intern.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create()
         return reply(null, save)
     },
 
@@ -75,9 +75,9 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const txDB = await intern.getKnexClient(db, seneca, msg, meta)
+      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
 
-      const load = await intern.firstKnex(txDB, qent, q)
+      const load = await intern.firstKnex(knexClient, qent, q)
       reply(null, load)
     },
 
@@ -86,9 +86,9 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const txDB = await intern.getKnexClient(db, seneca, msg, meta)
+      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
       
-      const list = await intern.findKnex(txDB, qent, q)
+      const list = await intern.findKnex(knexClient, qent, q)
       reply(null, list)
     },
 
@@ -97,9 +97,9 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const txDB = await intern.getKnexClient(db, seneca, msg, meta)
+      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
 
-      const remove = await intern.removeKnex(txDB, qent, q)
+      const remove = await intern.removeKnex(knexClient, qent, q)
       reply(null, remove)
     },
 
