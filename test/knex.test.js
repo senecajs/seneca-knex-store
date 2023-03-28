@@ -245,16 +245,19 @@ describe('transaction', function () {
     
     try {
       await s0.post('foo:red')
-      expect(false).toEqual(true)
     }
     catch(err) {
-
+      expect(err.message).equal('seneca: Action foo:red failed: BAD.')
       let foos = await s0.entity('foo').list$()
       expect(foos.length).equal(0)
     
       let t0 = s0.entity.state()
       expect(t0.transaction.trace.length).equal(1)
+
+      return
     }
+
+    throw new Error('expected the call to throw')
   })
 })
 
