@@ -19,7 +19,9 @@ async function run() {
   const seneca = Seneca()
         .test()
         .use('promisify')
-        .use('entity')
+        .use('entity', {
+          transaction: { active: true }
+        })
         .use('..', configDB)
 
   await seneca.ready()
@@ -35,8 +37,6 @@ async function run() {
   const isCompleted = tx0.handle.isCompleted()
   console.log('isCompleted', isCompleted)
 
-
   let foos = await seneca.entity('foo').list$()
   console.log("foos", foos)
-  debugger
 }
