@@ -1,9 +1,11 @@
 import QBuilder from './qbuilder'
 const Uuid = require('uuid').v4
+import type { Knex } from 'knex';
+
 
 const intern = {
 
-  async findKnex(knex: any, ent: any, q: any): Promise<any> {
+  async findKnex(knex: Knex, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -62,7 +64,7 @@ const intern = {
 
   },
 
-  async firstKnex(knex: any, ent: any, q: any): Promise<any> {
+  async firstKnex(knex: Knex, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     let sort = null
@@ -100,7 +102,7 @@ const intern = {
     return intern.makeent(ent, query)
   },
 
-   async insertKnex(knex: any, ent: any): Promise<any> {
+   async insertKnex(knex: Knex, ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -130,7 +132,7 @@ const intern = {
     return intern.makeent(ent, formattedQuery)
   },
 
-   async updateKnex(knex: any, ent: any): Promise<any> {
+   async updateKnex(knex: Knex, ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -148,7 +150,7 @@ const intern = {
   },
 
   //Needs to be refactored to a better way/code
-   async removeKnex(knex: any, ent: any, q: any): Promise<any> {
+   async removeKnex(knex: Knex, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -249,11 +251,11 @@ const intern = {
 
     //Knex returns the number of rows affected if delete is ok
     const result = typeof query == 'number' ? null : 'Error'
-    const formattedQuery = query.length == 1 ? query[0] : query
+    const formattedQuery = typeof query !== 'number' ? query[0] : query
     return isLoad ? intern.makeent(ent, formattedQuery) : result
   },
 
-   async upsertKnex(knex: any, ent: any, data: any, q: any): Promise<any> {
+   async upsertKnex(knex: Knex, ent: any, data: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -361,7 +363,7 @@ const intern = {
     return ent.make$(entp)
   },
 
-   async isUpdate(knex: any, ent: any, q: any) {
+   async isUpdate(knex: Knex, ent: any, q: any) {
     // ------------- TODO - UPSERT ----------------//
     // const isUpsert = q.upsert$ ? true : false
 
@@ -385,7 +387,7 @@ const intern = {
     return isUpdate
   },
   
-  async getKnexClient(knex: any, seneca: any, msg: any, meta: any) {
+  async getKnexClient(knex: Knex, seneca: any, msg: any, meta: any) {
     let transaction = seneca.entity.state().transaction
 
     if(transaction && !transaction.finish && false !== msg.transaction$) {
