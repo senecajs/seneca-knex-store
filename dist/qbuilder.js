@@ -57,10 +57,13 @@ function QBuilder(knex) {
                 return knex(args.table_name)
                     .orderBy(args.sort.field, args.sort.order)
                     .where(args.filter)
-                    .offset(args.skip)
+                    .offset(args.skip || 0)
                     .first();
             }
-            return knex(args.table_name).where(args.filter).offset(args.skip).first();
+            if (args.skip) {
+                return knex(args.table_name).where(args.filter).offset(args.skip).first();
+            }
+            return knex(args.table_name).where(args.filter).first();
         },
         raw(args) {
             return knex.raw(args.query, args.data);

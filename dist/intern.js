@@ -195,7 +195,7 @@ const intern = {
         const query = await (0, qbuilder_1.default)(knex).delete(args);
         //Knex returns the number of rows affected if delete is ok
         const result = typeof query == 'number' ? null : 'Error';
-        const formattedQuery = query.length == 1 ? query[0] : query;
+        const formattedQuery = typeof query !== 'number' ? query[0] : query;
         return isLoad ? intern.makeent(ent, formattedQuery) : result;
     },
     async upsertKnex(knex, ent, data, q) {

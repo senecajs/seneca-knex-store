@@ -24,7 +24,7 @@ function knex_store(options) {
         save: async function (msg, reply) {
             const seneca = this;
             const { ent, q } = msg;
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
+            const knexClient = await intern_1.default.getKnexClient(db, seneca, msg, meta);
             async function do_create() {
                 // create a new entity
                 try {
@@ -32,7 +32,7 @@ function knex_store(options) {
                     if (ent.id$) {
                         newEnt.id = ent.id$;
                     }
-                    const doCreate = await intern_1.default.insertKnex(txDB, newEnt);
+                    const doCreate = await intern_1.default.insertKnex(knexClient, newEnt);
                     return doCreate;
                 }
                 catch (err) {
@@ -41,36 +41,36 @@ function knex_store(options) {
             }
             // Save an existing entity
             async function do_save() {
-                const doSave = await intern_1.default.updateKnex(txDB, ent);
+                const doSave = await intern_1.default.updateKnex(knexClient, ent);
                 // call the reply callback with the
                 // updated entity
                 return doSave;
             }
-            const save = (await intern_1.default.isUpdate(txDB, ent, q)) ? await do_save() : await do_create();
+            const save = (await intern_1.default.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create();
             return reply(null, save);
         },
         load: async function (msg, reply) {
             const seneca = this;
             const qent = msg.qent;
             const q = msg.q || {};
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
-            const load = await intern_1.default.firstKnex(txDB, qent, q);
+            const knexClient = await intern_1.default.getKnexClient(db, seneca, msg, meta);
+            const load = await intern_1.default.firstKnex(knexClient, qent, q);
             reply(null, load);
         },
         list: async function (msg, reply) {
             const seneca = this;
             const qent = msg.qent;
             const q = msg.q || {};
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
-            const list = await intern_1.default.findKnex(txDB, qent, q);
+            const knexClient = await intern_1.default.getKnexClient(db, seneca, msg, meta);
+            const list = await intern_1.default.findKnex(knexClient, qent, q);
             reply(null, list);
         },
         remove: async function (msg, reply) {
             const seneca = this;
             const qent = msg.qent;
             const q = msg.q || {};
-            const txDB = await intern_1.default.getKnexClient(db, seneca, msg, meta);
-            const remove = await intern_1.default.removeKnex(txDB, qent, q);
+            const knexClient = await intern_1.default.getKnexClient(db, seneca, msg, meta);
+            const remove = await intern_1.default.removeKnex(knexClient, qent, q);
             reply(null, remove);
         },
         native: function (_msg, reply) {
