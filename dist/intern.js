@@ -81,7 +81,7 @@ const intern = {
         const query = await (0, qbuilder_1.default)(knex).first(args);
         return intern.makeent(ent, query);
     },
-    async insertKnex(knex, ent, q) {
+    async insertKnex(knex, ent) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         // ----------------- TODO - UPSERT -----------------//
@@ -195,7 +195,7 @@ const intern = {
         const query = await (0, qbuilder_1.default)(knex).delete(args);
         //Knex returns the number of rows affected if delete is ok
         const result = typeof query == 'number' ? null : 'Error';
-        const formattedQuery = query.length == 1 ? query[0] : query;
+        const formattedQuery = typeof query !== 'number' ? query[0] : query;
         return isLoad ? intern.makeent(ent, formattedQuery) : result;
     },
     async upsertKnex(knex, ent, data, q) {
@@ -299,6 +299,20 @@ const intern = {
         const rowExist = await intern.firstKnex(knex, ent, id);
         const isUpdate = rowExist ? true : false;
         return isUpdate;
+    },
+    async getKnexClient(knex, seneca, msg, meta) {
+        let transaction = seneca.entity.state().transaction;
+        if (transaction && !transaction.finish && false !== msg.transaction$) {
+            const trx = await knex.transaction();
+            transaction.trace.push({
+                when: Date.now(),
+                msg,
+                meta,
+            });
+            transaction.client = trx;
+            return trx;
+        }
+        return knex;
     }
 };
 exports.default = intern;

@@ -1,4 +1,6 @@
-function QBuilder(knex: any) {
+import type { Knex } from 'knex';
+
+function QBuilder(knex: Knex ) {
   const Q = {
     upsert(args: { table_name: string; data: any; id: string }) {
       return knex(args.table_name).upsert(args.data, args.id)
@@ -17,7 +19,7 @@ function QBuilder(knex: any) {
     },
     delete(args: {
       table_name: string
-      filter: string
+      filter: readonly string[]
       isLoad: boolean
       skip?: number | null
       isArray?: boolean
@@ -74,10 +76,13 @@ function QBuilder(knex: any) {
         return knex(args.table_name)
           .orderBy(args.sort.field, args.sort.order)
           .where(args.filter)
-          .offset(args.skip)
+          .offset(args.skip || 0)
           .first()
       }
-      return knex(args.table_name).where(args.filter).offset(args.skip).first()
+      if(args.skip) {
+        return knex(args.table_name).where(args.filter).offset(args.skip).first()
+      }
+      return knex(args.table_name).where(args.filter).first()
     },
     raw(args: { query: string; data?: any }) {
       return knex.raw(args.query, args.data)

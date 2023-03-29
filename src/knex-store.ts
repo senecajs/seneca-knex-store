@@ -35,9 +35,11 @@ function knex_store(this: any, options: Options) {
     name: STORE_NAME,
 
     save: async function (this: any, msg: any, reply: any) {
+        const seneca = this
         const { ent, q } = msg
+        
+        const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
 
-        // Create a new entity
         async function do_create() {
           // create a new entity
           try {
@@ -47,7 +49,7 @@ function knex_store(this: any, options: Options) {
               newEnt.id = ent.id$
             }
 
-            const doCreate = await intern.insertKnex(db, newEnt, q)
+            const doCreate = await intern.insertKnex(knexClient, newEnt)
 
             return doCreate
           } catch (err) {
@@ -57,36 +59,47 @@ function knex_store(this: any, options: Options) {
 
         // Save an existing entity
         async function do_save() {
-          const doSave = await intern.updateKnex(db , ent)
+          const doSave = await intern.updateKnex(knexClient , ent)
           // call the reply callback with the
           // updated entity
           return doSave
         }
 
-        const save = (await intern.isUpdate(db, ent, q)) ? await do_save() : await do_create()
+
+        const save = (await intern.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create()
         return reply(null, save)
     },
 
     load: async function (this: any, msg: any, reply: any) {
+      const seneca = this
       const qent = msg.qent
       const q = msg.q || {}
 
-      const load = await intern.firstKnex(db, qent, q)
+      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
+
+      const load = await intern.firstKnex(knexClient, qent, q)
       reply(null, load)
     },
 
-    list: async function (msg: any, reply: any) {
+    list: async function (this: any, msg: any, reply: any) {
+      const seneca = this
       const qent = msg.qent
       const q = msg.q || {}
-      const list = await intern.findKnex(db, qent, q)
+
+      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
+      
+      const list = await intern.findKnex(knexClient, qent, q)
       reply(null, list)
     },
 
     remove: async function (this: any, msg: any, reply: any) {
+      const seneca = this
       const qent = msg.qent
       const q = msg.q || {}
 
-      const remove = await intern.removeKnex(db, qent, q)
+      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
+
+      const remove = await intern.removeKnex(knexClient, qent, q)
       reply(null, remove)
     },
 
@@ -101,14 +114,55 @@ function knex_store(this: any, options: Options) {
     },
   }
 
-  // Seneca will call init:plugin-name for us. This makes
-  // this action a great place to do any setup.
   const meta = seneca.store.init(seneca, options, store)
 
   seneca.add(
     { init: store.name, tag: meta.tag },
     function (_msg: any, done: any) {
       return configure(options, done)
+    }
+  )
+
+  seneca.add('sys:entity,transaction:begin', async function(this: any, msg: any,reply: any) {
+      reply({
+        get_handle: () => ({ id: this.util.Nid(), name: 'knex' })
+      })
+  })
+
+  seneca.add(
+    'sys:entity,transaction:end',
+    async function (msg: any, reply: any) {
+      const transaction = msg.details()
+      const client = transaction.client
+
+      try {
+        const commit = await client.commit()
+
+        if (commit) {
+          reply({
+            done: true,
+          })
+        }
+      } catch (err) {
+        reply(err)
+      }
+    }
+  )
+
+  seneca.add(
+    'sys:entity,transaction:rollback',
+    async function (msg: any, reply: any) {
+      const transaction = msg.details()
+      const client = transaction.client
+      try {
+        await client.rollback();
+          reply({
+            done: false,
+            rollback: true,
+          })
+      } catch (err) {
+        reply(err)
+      }
     }
   )
 
