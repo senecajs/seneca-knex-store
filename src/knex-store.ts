@@ -1,6 +1,7 @@
 /* Copyright (c) 2010-2022 Richard Rodger and other contributors, MIT License */
 import intern from './intern'
 import knex from 'knex'
+import type { Knex } from 'knex';
 
 const STORE_NAME = 'knex-store'
 
@@ -168,10 +169,10 @@ function knex_store(this: any, options: Options) {
 
   seneca.add(
     'sys:entity,transaction:adopt',
-    async function (msg: any, reply: any) {
-      const trxProvider = db.transactionProvider()
+    async function (msg: any, reply: any, handle: any) {
+      console.log('ADOPT', handle)
+      const trxProvider = handle
       trxProvider.then((trx: any) => {
-        // console.log('trx', trx)
         reply({ get_handle: () => trx })
       })
     }

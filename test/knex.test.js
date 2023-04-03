@@ -5,6 +5,8 @@ const { before, describe, it, beforeEach, afterEach } = lab
 const { expect } = require('@hapi/code')
 // const Shared = require('seneca-store-test')
 const Async = require('async')
+const knex = require('knex')
+
 
 const KnexStore = require('../src/knex-store')
 
@@ -261,8 +263,10 @@ describe('transaction', function () {
   })
 
 
-  it('adopt', async () => {
-    const s0 = await si.entity.adopt()
+  it('adopt-commit', async () => {
+    const trx = await knex.transaction()
+    const s0 = await s0.entity.adopt({handle:trx})
+
     await s0.entity('foo').data$({p1:'t1'}).save$()
     
     const isCompleted = s0.handle.isCompleted()
@@ -281,6 +285,21 @@ describe('transaction', function () {
     expect(foos.length).equal(2)
     expect(foos[0].p1).equal('t1')
     expect(foos[1].p1).equal('t2')
+  })
+
+  it('adopt-rollback', async () => {
+    const trx = await knex.transaction()
+    const s0 = await s0.entity.adopt({handle:trx})
+    
+    await s0.entity('foo').data$({p1:'t2'}).save$()
+
+    const tx0 = await s0.entity.rollback()
+
+    expect(tx0).include({result: { done: false, rollback: true }})
+
+    let foos = await si.entity('foo').list$()
+    expect(foos.length).equal(0)
+
   })
 })
 
