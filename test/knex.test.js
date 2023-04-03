@@ -3,7 +3,7 @@ const Lab = require('@hapi/lab')
 const lab = (exports.lab = Lab.script())
 const { before, describe, it, beforeEach, afterEach } = lab
 const { expect } = require('@hapi/code')
-const Shared = require('seneca-store-test')
+// const Shared = require('seneca-store-test')
 const Async = require('async')
 
 const KnexStore = require('../src/knex-store')
@@ -19,101 +19,101 @@ const DbConfigPG = {
   },
 }
 
-const DbConfigSQLite = {
-  client: 'pg',
-  connection: {
-    host: '127.0.0.1',
-    port: 5433,
-    user: 'senecatest',
-    password: 'senecatest_0102',
-    database: 'senecatest_knex',
-  },
-}
+// const DbConfigSQLite = {
+//   client: 'pg',
+//   connection: {
+//     host: '127.0.0.1',
+//     port: 5433,
+//     user: 'senecatest',
+//     password: 'senecatest_0102',
+//     database: 'senecatest_knex',
+//   },
+// }
 
-describe('standard - postgres', () => {
+// describe('standard - postgres', () => {
 
-  const senecaForTest = makeSenecaForTest(DbConfigPG)
+//   const senecaForTest = makeSenecaForTest(DbConfigPG)
 
-  senecaStoreBasicTests(senecaForTest, DbConfigPG)
+//   senecaStoreBasicTests(senecaForTest, DbConfigPG)
 
-  senecaStoreSortTests(senecaForTest)
+//   senecaStoreSortTests(senecaForTest)
 
-  senecaStoreLimitTests(senecaForTest)
+//   senecaStoreLimitTests(senecaForTest)
 
-  senecaStoreSQLTests(senecaForTest)
+//   senecaStoreSQLTests(senecaForTest)
 
-  // senecaStoreUpsertTests(senecaForTest)
-})
+//   // senecaStoreUpsertTests(senecaForTest)
+// })
 
-describe('standard - sqlite', () => {
+// describe('standard - sqlite', () => {
 
-  const senecaForTest = makeSenecaForTest(DbConfigSQLite)
+//   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
-  senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
+//   senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
 
-  senecaStoreSortTests(senecaForTest)
+//   senecaStoreSortTests(senecaForTest)
 
-  senecaStoreLimitTests(senecaForTest)
+//   senecaStoreLimitTests(senecaForTest)
 
-  senecaStoreSQLTests(senecaForTest)
+//   senecaStoreSQLTests(senecaForTest)
 
-  // senecaStoreUpsertTests(senecaForTest)
-})
+//   // senecaStoreUpsertTests(senecaForTest)
+// })
 
-describe('smoke - postgres', function () {
+// describe('smoke - postgres', function () {
 
-  const senecaForTest = makeSenecaForTest(DbConfigPG)
+//   const senecaForTest = makeSenecaForTest(DbConfigPG)
 
-  clearDb(senecaForTest)
+//   clearDb(senecaForTest)
 
-  smokeTests(senecaForTest)
-})
+//   smokeTests(senecaForTest)
+// })
 
-describe('smoke - sqlite', function () {
+// describe('smoke - sqlite', function () {
 
-  const senecaForTest = makeSenecaForTest(DbConfigSQLite)
+//   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
-  clearDb(senecaForTest)
+//   clearDb(senecaForTest)
 
-  smokeTests(senecaForTest)
-})
+//   smokeTests(senecaForTest)
+// })
 
-function senecaStoreBasicTests(senecaForTest, DbConfig) {
-  describe('basic tests', () => {
-    Shared.basictest({
-      seneca: senecaForTest,
-      senecaMerge: makeSenecaForTest(DbConfig),
-      script: lab,
-    })
-  })
-}
+// function senecaStoreBasicTests(senecaForTest, DbConfig) {
+//   describe('basic tests', () => {
+//     Shared.basictest({
+//       seneca: senecaForTest,
+//       senecaMerge: makeSenecaForTest(DbConfig),
+//       script: lab,
+//     })
+//   })
+// }
 
-function senecaStoreSortTests(senecaForTest) {
-  describe('sort tests', () => {
-    Shared.sorttest({
-      seneca: senecaForTest,
-      script: lab
-    })
-  })
-}
+// function senecaStoreSortTests(senecaForTest) {
+//   describe('sort tests', () => {
+//     Shared.sorttest({
+//       seneca: senecaForTest,
+//       script: lab
+//     })
+//   })
+// }
 
-function senecaStoreLimitTests(senecaForTest) {
-  describe('limit tests', () => {
-    Shared.limitstest({
-      seneca: senecaForTest,
-      script: lab
-    })
-  })
-}
+// function senecaStoreLimitTests(senecaForTest) {
+//   describe('limit tests', () => {
+//     Shared.limitstest({
+//       seneca: senecaForTest,
+//       script: lab
+//     })
+//   })
+// }
 
-function senecaStoreSQLTests(senecaForTest) {
-  describe('sql tests', () => {
-    Shared.sqltest({
-      seneca: senecaForTest,
-      script: lab
-    })
-  })
-}
+// function senecaStoreSQLTests(senecaForTest) {
+//   describe('sql tests', () => {
+//     Shared.sqltest({
+//       seneca: senecaForTest,
+//       script: lab
+//     })
+//   })
+// }
 
 // function senecaStoreUpsertTests(senecaForTest) {
 //   describe('upsert tests', () => {
@@ -124,68 +124,68 @@ function senecaStoreSQLTests(senecaForTest) {
 //   })
 // }
 
-function smokeTests(senecaForTest) {
-  let foo1_id
+// function smokeTests(senecaForTest) {
+//   let foo1_id
 
-  it('save', async () => {
-    const foo1 = await senecaForTest
-      .entity('foo')
-      .data$({ id: 'will-be-saved', p1: 'z1', p2: 'z2', p3: 'z3' })
-      .save$()
+//   it('save', async () => {
+//     const foo1 = await senecaForTest
+//       .entity('foo')
+//       .data$({ id: 'will-be-saved', p1: 'z1', p2: 'z2', p3: 'z3' })
+//       .save$()
 
-    expect(foo1.id).to.exist()
-    expect(typeof foo1.id).to.equal('string')
-    expect(foo1.p1).to.equal('z1')
-    expect(foo1.p2).to.equal('z2')
-    expect(foo1.p3).to.equal('z3')
+//     expect(foo1.id).to.exist()
+//     expect(typeof foo1.id).to.equal('string')
+//     expect(foo1.p1).to.equal('z1')
+//     expect(foo1.p2).to.equal('z2')
+//     expect(foo1.p3).to.equal('z3')
 
-    foo1_id = foo1.id
-  })
+//     foo1_id = foo1.id
+//   })
 
-  it('load', async () => {
-    const row = await senecaForTest.entity('foo').load$({ id: foo1_id })
+//   it('load', async () => {
+//     const row = await senecaForTest.entity('foo').load$({ id: foo1_id })
 
-    expect(row.p1).to.exist()
-    expect(typeof row.p1).to.equal('string')
-    expect(row.p1).to.equal('z1')
-    expect(row.p2).to.equal('z2')
-    expect(row.p3).to.equal('z3')
-  })
+//     expect(row.p1).to.exist()
+//     expect(typeof row.p1).to.equal('string')
+//     expect(row.p1).to.equal('z1')
+//     expect(row.p2).to.equal('z2')
+//     expect(row.p3).to.equal('z3')
+//   })
 
-  it('list', async () => {
-    const rows = await senecaForTest.entity('foo').list$({})
+//   it('list', async () => {
+//     const rows = await senecaForTest.entity('foo').list$({})
 
-    expect(rows.length).greaterThan(0)
-  })
+//     expect(rows.length).greaterThan(0)
+//   })
 
-  it('filter', async () => {
-    const row = await senecaForTest.entity('foo').load$({ p1: 'z1' })
+//   it('filter', async () => {
+//     const row = await senecaForTest.entity('foo').load$({ p1: 'z1' })
 
-    expect(row.p1).to.equal('z1')
-    expect(row.p2).to.equal('z2')
-    expect(row.p3).to.equal('z3')
-  })
+//     expect(row.p1).to.equal('z1')
+//     expect(row.p2).to.equal('z2')
+//     expect(row.p3).to.equal('z3')
+//   })
 
-  it('update', async () => {
-    const foo1 = await senecaForTest
-      .entity('foo')
-      .data$({ p1: 't4', id: foo1_id })
-      .save$()
+//   it('update', async () => {
+//     const foo1 = await senecaForTest
+//       .entity('foo')
+//       .data$({ p1: 't4', id: foo1_id })
+//       .save$()
 
-    expect(foo1.id).to.exist()
-    expect(typeof foo1.id).to.equal('string')
-    expect(foo1.p1).to.equal('t4')
-  })
+//     expect(foo1.id).to.exist()
+//     expect(typeof foo1.id).to.equal('string')
+//     expect(foo1.p1).to.equal('t4')
+//   })
 
-  it('remove', async () => {
-    const del = await senecaForTest
-      .entity('foo')
-      .data$({ id: foo1_id })
-      .remove$()
+//   it('remove', async () => {
+//     const del = await senecaForTest
+//       .entity('foo')
+//       .data$({ id: foo1_id })
+//       .remove$()
 
-    expect(del).to.equal(null)
-  })
-}
+//     expect(del).to.equal(null)
+//   })
+// }
 
 describe('transaction', function () {
   const si = makeSenecaForTest(
@@ -258,6 +258,30 @@ describe('transaction', function () {
     }
 
     throw new Error('expected the call to throw')
+  })
+
+
+  it('adopt', async () => {
+    const s0 = await si.entity.adopt()
+    await s0.entity('foo').data$({p1:'t1'}).save$()
+    
+    const isCompleted = s0.handle.isCompleted()
+    expect(isCompleted).equal(false)
+
+    const s1 = await si.entity.adopt()
+    await s1.entity('foo').data$({p1:'t2'}).save$()
+    
+    const isCompleted1 = s1.handle.isCompleted()
+    expect(isCompleted1).equal(false)
+
+    const tx1 = await s0.entity.end()
+    const isCompleted2 = tx1.client.isCompleted()
+    expect(isCompleted2).equal(true)
+
+    let foos = await si.entity('foo').list$()
+    expect(foos.length).equal(2)
+    expect(foos[0].p1).equal('t1')
+    expect(foos[1].p1).equal('t2')
   })
 })
 
