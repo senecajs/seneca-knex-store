@@ -7,7 +7,6 @@ const { expect } = require('@hapi/code')
 const Async = require('async')
 const knex = require('knex')
 
-
 const KnexStore = require('../src/knex-store')
 
 const DbConfigPG = {
@@ -264,7 +263,7 @@ describe('transaction', function () {
 
 
   it('adopt-commit', async () => {
-    const trx = await knex.transaction()
+    const trx = await knex(DbConfigPG).transaction()
     const s0 = await s0.entity.adopt({handle:trx})
 
     await s0.entity('foo').data$({p1:'t1'}).save$()
@@ -287,8 +286,9 @@ describe('transaction', function () {
     expect(foos[1].p1).equal('t2')
   })
 
+
   it('adopt-rollback', async () => {
-    const trx = await knex.transaction()
+    const trx = await knex(DbConfigPG).transaction()
     const s0 = await s0.entity.adopt({handle:trx})
     
     await s0.entity('foo').data$({p1:'t2'}).save$()

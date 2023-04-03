@@ -1,7 +1,6 @@
 /* Copyright (c) 2010-2022 Richard Rodger and other contributors, MIT License */
 import intern from './intern'
 import knex from 'knex'
-import type { Knex } from 'knex';
 
 const STORE_NAME = 'knex-store'
 
