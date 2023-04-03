@@ -268,10 +268,9 @@ describe('transaction', function () {
     const isCompleted = s0.handle.isCompleted()
     expect(isCompleted).equal(false)
 
-    const s1 = await si.entity.adopt()
-    await s1.entity('foo').data$({p1:'t2'}).save$()
+    await s0.entity('foo').data$({p1:'t2'}).save$()
     
-    const isCompleted1 = s1.handle.isCompleted()
+    const isCompleted1 = s0.handle.isCompleted()
     expect(isCompleted1).equal(false)
 
     const tx1 = await s0.entity.end()
