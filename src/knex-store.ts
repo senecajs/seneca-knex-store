@@ -172,8 +172,8 @@ function knex_store(this: any, options: Options) {
       const trxProvider = db.transactionProvider()
       trxProvider.then((trx: any) => {
         // console.log('trx', trx)
-				reply({ get_handle: ()=>(trx) });
-			});
+        reply({ get_handle: () => trx })
+      })
     }
   )
 
