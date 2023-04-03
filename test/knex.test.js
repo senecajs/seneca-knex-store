@@ -263,41 +263,70 @@ describe('transaction', function () {
 
 
   it('adopt-commit', async () => {
+
+    let foo1_id
+
     const trx = await knex(DbConfigPG).transaction()
-    const s0 = await si.entity.adopt({handle:trx})
-    console.log('s0', s0)
+    const txseneca  = await si.entity.adopt({handle:trx})
 
-    await s0.entity('foo').data$({p1:'t1'}).save$()
+    //I'm using the same Knex instance....
+    const foosSave = await txseneca.entity('foo').data$({p1:'t1'}).save$()
+    foo1_id = foosSave.id
+    await txseneca.entity('foo').data$({p1:'t2'}).save$()
     
-    const isCompleted = s0.handle.isCompleted()
-    expect(isCompleted).equal(false)
-
-    await s0.entity('foo').data$({p1:'t2'}).save$()
-    
-    const isCompleted1 = s0.handle.isCompleted()
+    //I'm checking the state of the transaction, I have not committed yet
+    //so isCompleted should be false and the list should be empty
+    const isCompleted1 = txseneca.client.isCompleted()
     expect(isCompleted1).equal(false)
+    let foosList = await si.entity('foo').list$()
+    expect(foosList.length).equal(0)
+    
+    //I'm updating the second element, using the same Knex instance
+    await txseneca.entity('foo').
+    data$({ p1: 't4', id: foo1_id })
+    .save$()
 
-    const tx1 = await s0.entity.end()
+    //I have not committed yet, so the list should be empty
+    let foosUpdate = await si.entity('foo').list$()
+    expect(foosUpdate.length).equal(0)
+
+    //I'm removing the first element, using the same Knex instance
+    await txseneca.entity('foo')
+    .data$({ id: foo1_id })
+    .remove$()
+
+    //I'm committing the transaction, using the same Knex instance
+    //So I'm expecting the first element to be removed and the second
+    //only element available to be t2
+    const tx1 = await txseneca.entity.end()
+    let foosCommit = await si.entity('foo').list$()
+    expect(foosCommit.length).equal(1)
+    expect(foosCommit[1].p1).equal('t2')
+
+    //I'm checking the state of the transaction, I have committed
+    //so isCompleted should be true
     const isCompleted2 = tx1.client.isCompleted()
     expect(isCompleted2).equal(true)
 
-    let foos = await si.entity('foo').list$()
-    expect(foos.length).equal(2)
-    expect(foos[0].p1).equal('t1')
-    expect(foos[1].p1).equal('t2')
+
+
   })
 
 
   it('adopt-rollback', async () => {
     const trx = await knex(DbConfigPG).transaction()
-    const s0 = await si.entity.adopt({handle:trx})
+    const txseneca = await txseneca.entity.adopt({handle:trx})
     
-    await s0.entity('foo').data$({p1:'t2'}).save$()
+    //I'm using the same Knex instance....Trying to save an element
+    await txseneca.entity('foo').data$({p1:'t2'}).save$()
 
-    const tx0 = await s0.entity.rollback()
+    //I'm rolling back the transaction, using the same Knex instance
+    const tx0 = await txseneca.entity.rollback()
 
+    //I'm checking the state of the transaction, I have rolled back
     expect(tx0).include({result: { done: false, rollback: true }})
 
+    //I'm checking the database, I have rolled back, so the list should be empty
     let foos = await si.entity('foo').list$()
     expect(foos.length).equal(0)
 
