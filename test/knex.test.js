@@ -264,7 +264,8 @@ describe('transaction', function () {
 
   it('adopt-commit', async () => {
     const trx = await knex(DbConfigPG).transaction()
-    const s0 = await s0.entity.adopt({handle:trx})
+    const s0 = await si.entity.adopt({handle:trx})
+    console.log('s0', s0)
 
     await s0.entity('foo').data$({p1:'t1'}).save$()
     
@@ -289,7 +290,7 @@ describe('transaction', function () {
 
   it('adopt-rollback', async () => {
     const trx = await knex(DbConfigPG).transaction()
-    const s0 = await s0.entity.adopt({handle:trx})
+    const s0 = await si.entity.adopt({handle:trx})
     
     await s0.entity('foo').data$({p1:'t2'}).save$()
 
