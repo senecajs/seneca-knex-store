@@ -3,7 +3,7 @@ const Lab = require('@hapi/lab')
 const lab = (exports.lab = Lab.script())
 const { before, describe, it, beforeEach, afterEach } = lab
 const { expect } = require('@hapi/code')
-// const Shared = require('seneca-store-test')
+const Shared = require('seneca-store-test')
 const Async = require('async')
 const knex = require('knex')
 
@@ -20,101 +20,101 @@ const DbConfigPG = {
   },
 }
 
-// const DbConfigSQLite = {
-//   client: 'pg',
-//   connection: {
-//     host: '127.0.0.1',
-//     port: 5433,
-//     user: 'senecatest',
-//     password: 'senecatest_0102',
-//     database: 'senecatest_knex',
-//   },
-// }
+const DbConfigSQLite = {
+  client: 'pg',
+  connection: {
+    host: '127.0.0.1',
+    port: 5433,
+    user: 'senecatest',
+    password: 'senecatest_0102',
+    database: 'senecatest_knex',
+  },
+}
 
-// describe('standard - postgres', () => {
+describe('standard - postgres', () => {
 
-//   const senecaForTest = makeSenecaForTest(DbConfigPG)
+  const senecaForTest = makeSenecaForTest(DbConfigPG)
 
-//   senecaStoreBasicTests(senecaForTest, DbConfigPG)
+  senecaStoreBasicTests(senecaForTest, DbConfigPG)
 
-//   senecaStoreSortTests(senecaForTest)
+  senecaStoreSortTests(senecaForTest)
 
-//   senecaStoreLimitTests(senecaForTest)
+  senecaStoreLimitTests(senecaForTest)
 
-//   senecaStoreSQLTests(senecaForTest)
+  senecaStoreSQLTests(senecaForTest)
 
-//   // senecaStoreUpsertTests(senecaForTest)
-// })
+  // senecaStoreUpsertTests(senecaForTest)
+})
 
-// describe('standard - sqlite', () => {
+describe('standard - sqlite', () => {
 
-//   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
+  const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
-//   senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
+  senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
 
-//   senecaStoreSortTests(senecaForTest)
+  senecaStoreSortTests(senecaForTest)
 
-//   senecaStoreLimitTests(senecaForTest)
+  senecaStoreLimitTests(senecaForTest)
 
-//   senecaStoreSQLTests(senecaForTest)
+  senecaStoreSQLTests(senecaForTest)
 
-//   // senecaStoreUpsertTests(senecaForTest)
-// })
+  // senecaStoreUpsertTests(senecaForTest)
+})
 
-// describe('smoke - postgres', function () {
+describe('smoke - postgres', function () {
 
-//   const senecaForTest = makeSenecaForTest(DbConfigPG)
+  const senecaForTest = makeSenecaForTest(DbConfigPG)
 
-//   clearDb(senecaForTest)
+  clearDb(senecaForTest)
 
-//   smokeTests(senecaForTest)
-// })
+  smokeTests(senecaForTest)
+})
 
-// describe('smoke - sqlite', function () {
+describe('smoke - sqlite', function () {
 
-//   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
+  const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
-//   clearDb(senecaForTest)
+  clearDb(senecaForTest)
 
-//   smokeTests(senecaForTest)
-// })
+  smokeTests(senecaForTest)
+})
 
-// function senecaStoreBasicTests(senecaForTest, DbConfig) {
-//   describe('basic tests', () => {
-//     Shared.basictest({
-//       seneca: senecaForTest,
-//       senecaMerge: makeSenecaForTest(DbConfig),
-//       script: lab,
-//     })
-//   })
-// }
+function senecaStoreBasicTests(senecaForTest, DbConfig) {
+  describe('basic tests', () => {
+    Shared.basictest({
+      seneca: senecaForTest,
+      senecaMerge: makeSenecaForTest(DbConfig),
+      script: lab,
+    })
+  })
+}
 
-// function senecaStoreSortTests(senecaForTest) {
-//   describe('sort tests', () => {
-//     Shared.sorttest({
-//       seneca: senecaForTest,
-//       script: lab
-//     })
-//   })
-// }
+function senecaStoreSortTests(senecaForTest) {
+  describe('sort tests', () => {
+    Shared.sorttest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+}
 
-// function senecaStoreLimitTests(senecaForTest) {
-//   describe('limit tests', () => {
-//     Shared.limitstest({
-//       seneca: senecaForTest,
-//       script: lab
-//     })
-//   })
-// }
+function senecaStoreLimitTests(senecaForTest) {
+  describe('limit tests', () => {
+    Shared.limitstest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+}
 
-// function senecaStoreSQLTests(senecaForTest) {
-//   describe('sql tests', () => {
-//     Shared.sqltest({
-//       seneca: senecaForTest,
-//       script: lab
-//     })
-//   })
-// }
+function senecaStoreSQLTests(senecaForTest) {
+  describe('sql tests', () => {
+    Shared.sqltest({
+      seneca: senecaForTest,
+      script: lab
+    })
+  })
+}
 
 // function senecaStoreUpsertTests(senecaForTest) {
 //   describe('upsert tests', () => {
@@ -125,68 +125,68 @@ const DbConfigPG = {
 //   })
 // }
 
-// function smokeTests(senecaForTest) {
-//   let foo1_id
+function smokeTests(senecaForTest) {
+  let foo1_id
 
-//   it('save', async () => {
-//     const foo1 = await senecaForTest
-//       .entity('foo')
-//       .data$({ id: 'will-be-saved', p1: 'z1', p2: 'z2', p3: 'z3' })
-//       .save$()
+  it('save', async () => {
+    const foo1 = await senecaForTest
+      .entity('foo')
+      .data$({ id: 'will-be-saved', p1: 'z1', p2: 'z2', p3: 'z3' })
+      .save$()
 
-//     expect(foo1.id).to.exist()
-//     expect(typeof foo1.id).to.equal('string')
-//     expect(foo1.p1).to.equal('z1')
-//     expect(foo1.p2).to.equal('z2')
-//     expect(foo1.p3).to.equal('z3')
+    expect(foo1.id).to.exist()
+    expect(typeof foo1.id).to.equal('string')
+    expect(foo1.p1).to.equal('z1')
+    expect(foo1.p2).to.equal('z2')
+    expect(foo1.p3).to.equal('z3')
 
-//     foo1_id = foo1.id
-//   })
+    foo1_id = foo1.id
+  })
 
-//   it('load', async () => {
-//     const row = await senecaForTest.entity('foo').load$({ id: foo1_id })
+  it('load', async () => {
+    const row = await senecaForTest.entity('foo').load$({ id: foo1_id })
 
-//     expect(row.p1).to.exist()
-//     expect(typeof row.p1).to.equal('string')
-//     expect(row.p1).to.equal('z1')
-//     expect(row.p2).to.equal('z2')
-//     expect(row.p3).to.equal('z3')
-//   })
+    expect(row.p1).to.exist()
+    expect(typeof row.p1).to.equal('string')
+    expect(row.p1).to.equal('z1')
+    expect(row.p2).to.equal('z2')
+    expect(row.p3).to.equal('z3')
+  })
 
-//   it('list', async () => {
-//     const rows = await senecaForTest.entity('foo').list$({})
+  it('list', async () => {
+    const rows = await senecaForTest.entity('foo').list$({})
 
-//     expect(rows.length).greaterThan(0)
-//   })
+    expect(rows.length).greaterThan(0)
+  })
 
-//   it('filter', async () => {
-//     const row = await senecaForTest.entity('foo').load$({ p1: 'z1' })
+  it('filter', async () => {
+    const row = await senecaForTest.entity('foo').load$({ p1: 'z1' })
 
-//     expect(row.p1).to.equal('z1')
-//     expect(row.p2).to.equal('z2')
-//     expect(row.p3).to.equal('z3')
-//   })
+    expect(row.p1).to.equal('z1')
+    expect(row.p2).to.equal('z2')
+    expect(row.p3).to.equal('z3')
+  })
 
-//   it('update', async () => {
-//     const foo1 = await senecaForTest
-//       .entity('foo')
-//       .data$({ p1: 't4', id: foo1_id })
-//       .save$()
+  it('update', async () => {
+    const foo1 = await senecaForTest
+      .entity('foo')
+      .data$({ p1: 't4', id: foo1_id })
+      .save$()
 
-//     expect(foo1.id).to.exist()
-//     expect(typeof foo1.id).to.equal('string')
-//     expect(foo1.p1).to.equal('t4')
-//   })
+    expect(foo1.id).to.exist()
+    expect(typeof foo1.id).to.equal('string')
+    expect(foo1.p1).to.equal('t4')
+  })
 
-//   it('remove', async () => {
-//     const del = await senecaForTest
-//       .entity('foo')
-//       .data$({ id: foo1_id })
-//       .remove$()
+  it('remove', async () => {
+    const del = await senecaForTest
+      .entity('foo')
+      .data$({ id: foo1_id })
+      .remove$()
 
-//     expect(del).to.equal(null)
-//   })
-// }
+    expect(del).to.equal(null)
+  })
+}
 
 describe('transaction', function () {
   const si = makeSenecaForTest(
@@ -263,32 +263,53 @@ describe('transaction', function () {
 
 
   it('adopt-commit', async () => {
-
+    let fooKnexTest_id
     let foo1_id
+    let foo2_id
 
     const trx = await knex(DbConfigPG).transaction()
+
+    //Testing Knex client directly using the transaction
+    trx('foo').insert({p1:'tx'}).returning('*').then(trx.commit)
+    .then((result) => {
+      expect(result[0].p1).equal('tx')
+      fooKnexTest_id = result[0].id
+    })
+
+    //I'm using the same Knex instance directly to delete the row created above
+    trx('foo').where('id', fooKnexTest_id).del().then(trx.commit)
+    .then((result) => {
+      //Knex returns the number of rows deleted
+      expect(result).equal(1)
+    })
+
     const txseneca  = await si.entity.adopt({handle:trx})
 
+    //I'm checking the state of the transaction inside seneca, if it exists...
+    const isTransaction = !!txseneca.entity.state().transaction
+    expect(isTransaction).equal(true)
+
     //I'm using the same Knex instance....
-    const foosSave = await txseneca.entity('foo').data$({p1:'t1'}).save$()
-    foo1_id = foosSave.id
-    await txseneca.entity('foo').data$({p1:'t2'}).save$()
+    const foo1 = await txseneca.entity('foo').data$({p1:'t1'}).save$()
+    foo1_id = foo1.id
+    const foo2 = await txseneca.entity('foo').data$({p1:'t2'}).save$()
+    foo2_id = foo2.id
     
     //I'm checking the state of the transaction, I have not committed yet
     //so isCompleted should be false and the list should be empty
     const isCompleted1 = txseneca.client.isCompleted()
     expect(isCompleted1).equal(false)
-    let foosList = await si.entity('foo').list$()
-    expect(foosList.length).equal(0)
+    let listFoo1 = await si.entity('foo').list$()
+    expect(listFoo1.length).equal(0)
     
     //I'm updating the second element, using the same Knex instance
     await txseneca.entity('foo').
-    data$({ p1: 't4', id: foo1_id })
+    data$({ p1: 't3', id: foo2_id })
     .save$()
 
     //I have not committed yet, so the list should be empty
-    let foosUpdate = await si.entity('foo').list$()
-    expect(foosUpdate.length).equal(0)
+    let listFoo2 = await si.entity('foo').list$()
+    expect(listFoo2.length).equal(0)
 
     //I'm removing the first element, using the same Knex instance
     await txseneca.entity('foo')
@@ -297,38 +318,91 @@ describe('transaction', function () {
 
     //I'm committing the transaction, using the same Knex instance
     //So I'm expecting the first element to be removed and the second
-    //only element available to be t2
+    //only element available to be t3 (the updated value)
     const tx1 = await txseneca.entity.end()
     let foosCommit = await si.entity('foo').list$()
     expect(foosCommit.length).equal(1)
-    expect(foosCommit[1].p1).equal('t2')
+    expect(foosCommit[1].p1).equal('t3')
 
     //I'm checking the state of the transaction, I have committed
     //so isCompleted should be true
     const isCompleted2 = tx1.client.isCompleted()
     expect(isCompleted2).equal(true)
 
+  })
 
+  it('adopt-knex-direct', async () => {
+    //Creating Knex instance directly to insert a row
+    const trx = await knex(DbConfigPG).transaction()
 
+    //Testing Knex client directly using the transaction, I'm inserting a row
+    trx('foo').insert({p1:'tx'}).returning('*').then(trx.commit)
+    .then((result) => {
+      expect(result[0].p1).equal('tx')
+    })
+
+    //I'm using the same Knex instance directly to list the rows
+    trx('foo').select('*').then(trx.commit)
+    .then((result) => {
+      expect(result.length).equal(1)
+    })
+    
+    //I'm using the same Knex instance directly to delete the row created above
+    trx('foo').where('p1', 'tx').del().then(trx.commit)
+    .then((result) => {
+      expect(result).equal(1)
+    })
+
+    //Same Knex instance directly to list the rows, it should be empty
+    trx('foo').select('*').then(trx.commit)
+    .then((result) => {
+      expect(result.length).equal(0)
+    })
+
+    //Testing reusability of the same Knex instance
+    await trx('foo').insert({p1:'tx'})
+    await trx('foo').insert({p1:'tx1'})
+    await trx('foo').insert({p1:'tx2'})
+    await trx('foo').insert({p1:'tx3'})
+    await trx.commit()
+
+    //Same Knex instance directly to list the rows, it should be 4
+    trx('foo').select('*').then(trx.commit).then((result) => {
+      expect(result.length).equal(4)
+    })
   })
 
 
   it('adopt-rollback', async () => {
     const trx = await knex(DbConfigPG).transaction()
-    const txseneca = await txseneca.entity.adopt({handle:trx})
+
+    //Testing Knex client directly using the transaction, I'm inserting a row
+    //And then I'm rolling back the transaction
+    trx('foo').insert({p1:'tx'}).returning('*').then(trx.rollback)
+    .then((result) => {
+      expect(result[0].p1).not.equal('tx')
+    })
+
+    const txseneca = await si.entity.adopt({handle:trx})
+
+    //I'm checking the state of the transaction inside seneca, if it exists...
+    const isTransaction = !!txseneca.entity.state().transaction
+    expect(isTransaction).equal(true)
+
+    //I'm using the same Knex instance....
+    const foo1 = await txseneca.entity('foo').data$({p1:'t1'}).save$()
+    await txseneca.entity.rollback()
+    expect(foo1.id).equal(undefined)
+    const foo2 = await txseneca.entity('foo').data$({p1:'t2'}).save$()
+    await txseneca.entity.rollback()
+    expect(foo2.id).equal(undefined)
     
-    //I'm using the same Knex instance....Trying to save an element
-    await txseneca.entity('foo').data$({p1:'t2'}).save$()
-
-    //I'm rolling back the transaction, using the same Knex instance
-    const tx0 = await txseneca.entity.rollback()
-
-    //I'm checking the state of the transaction, I have rolled back
-    expect(tx0).include({result: { done: false, rollback: true }})
-
-    //I'm checking the database, I have rolled back, so the list should be empty
-    let foos = await si.entity('foo').list$()
-    expect(foos.length).equal(0)
+    //I'm checking the state of the transaction, I have not committed yet
+    //so isCompleted should be true and the list should be empty
+    const isCompleted1 = txseneca.client.isCompleted()
+    expect(isCompleted1).equal(true)
+    let listFoo1 = await si.entity('foo').list$()
+    expect(listFoo1.length).equal(0)
 
   })
 })
