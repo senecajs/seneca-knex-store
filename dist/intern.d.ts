@@ -14,6 +14,6 @@ declare const intern: {
     getConfig(spec: any): any;
     makeent(ent: any, row: any): any;
     isUpdate(knex: Knex, ent: any, q: any): Promise<boolean>;
-    getKnexClient(knex: Knex, seneca: any, msg: any, meta: any): Promise<Knex<any, any[]>>;
+    getKnexClient(knex: Knex, seneca: any, msg: any, meta: any): Promise<any>;
 };
 export default intern;

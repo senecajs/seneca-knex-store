@@ -11,7 +11,7 @@ const intern = {
 
     const isQArray = Array.isArray(q)
 
-    const filter = intern.isObjectEmpty(q) ? {...entp} : isQArray ? q : {...q}
+    const filter = intern.isObjectEmpty(q) ? { ...entp } : isQArray ? q : { ...q }
 
     if (filter.native$) {
       const argsNative = typeof filter.native$ === 'string' ? {
@@ -56,9 +56,9 @@ const intern = {
       isArray: isQArray,
       sort,
       skip,
-      ...(limit && {limit})
+      ...(limit && { limit })
     }
-    
+
     const query = await QBuilder(knex).select(args)
     return query.map((row: any) => intern.makeent(ent, row))
 
@@ -102,7 +102,7 @@ const intern = {
     return intern.makeent(ent, query)
   },
 
-   async insertKnex(knex: Knex, ent: any): Promise<any> {
+  async insertKnex(knex: Knex, ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -115,16 +115,16 @@ const intern = {
     //     data: {...entp, id: entp.id ? entp.id : Uuid()},
     //     upsert: upsert$.length == 1 ? upsert$[0] : upsert$
     //   }
-      
+
     //   const query = await QBuilder(knex).insert(args)
     //   const formattedQuery = query.length == 1 ? query[0] : query
-  
+
     //   return intern.makeent(ent, formattedQuery)
     // }
 
     const args = {
       table_name: ent_table,
-      data: {...entp, id: entp.id ? entp.id : Uuid()},
+      data: { ...entp, id: entp.id ? entp.id : Uuid() },
     }
 
     const query = await QBuilder(knex).insert(args)
@@ -132,7 +132,7 @@ const intern = {
     return intern.makeent(ent, formattedQuery)
   },
 
-   async updateKnex(knex: Knex, ent: any): Promise<any> {
+  async updateKnex(knex: Knex, ent: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
@@ -150,11 +150,11 @@ const intern = {
   },
 
   //Needs to be refactored to a better way/code
-   async removeKnex(knex: Knex, ent: any, q: any): Promise<any> {
+  async removeKnex(knex: Knex, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
-    const filter = intern.isObjectEmpty(q) ? {...entp} : {...q}
+    const filter = intern.isObjectEmpty(q) ? { ...entp } : { ...q }
 
     const isLoad = filter.load$ ? true : false
 
@@ -168,24 +168,24 @@ const intern = {
     let all = null
     let first = null
 
-    if (filter.limit$){
+    if (filter.limit$) {
       limit = filter.limit$ > 0 ? filter.limit$ : null
       delete filter.limit$
     }
-    
-    if (filter.skip$){
+
+    if (filter.skip$) {
       skip = filter.skip$ > 0 ? filter.skip$ : 0
       delete filter.skip$
     }
 
-    if (filter.all$){
+    if (filter.all$) {
       all = filter.all$
       delete filter.all$
     }
 
     if (filter.sort$ || (all && skip)) {
 
-      if (filter.sort$){
+      if (filter.sort$) {
         const firstKey = Object.keys(filter.sort$)[0];
         const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
         sort = {
@@ -207,7 +207,7 @@ const intern = {
       if (all) {
         const argsSelect = {
           table_name: ent_table,
-          data : filter,
+          data: filter,
           sort,
           skip,
           limit
@@ -235,11 +235,11 @@ const intern = {
 
     const args = {
       table_name: ent_table,
-      filter: first ? {id: first.id} : filter,
+      filter: first ? { id: first.id } : filter,
       isLoad,
       skip
     }
-    
+
     if (all) {
       await QBuilder(knex).truncate(args)
       //Knex returns the number of rows affected if delete is ok
@@ -255,7 +255,7 @@ const intern = {
     return isLoad ? intern.makeent(ent, formattedQuery) : result
   },
 
-   async upsertKnex(knex: Knex, ent: any, data: any, q: any): Promise<any> {
+  async upsertKnex(knex: Knex, ent: any, data: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
 
     const args = {
@@ -268,13 +268,13 @@ const intern = {
     return query
   },
 
-   tablenameUtil(ent: any) {
+  tablenameUtil(ent: any) {
     const canon = ent.canon$({ object: true })
 
     return (canon.base ? canon.base + '_' : '') + canon.name
   },
 
-   makeentp(ent: any) {
+  makeentp(ent: any) {
     const fields = ent.fields$()
     const entp: any = {}
 
@@ -289,26 +289,25 @@ const intern = {
     return entp
   },
 
-   isObject(x: any) {
+  isObject(x: any) {
     return null != x && '[object Object]' === toString.call(x)
   },
 
-   isObjectEmpty(object: any) {  
+  isObjectEmpty(object: any) {
     return Object.keys(object).length === 0
   },
 
-   isDate(x: any) {
+  isDate(x: any) {
     return '[object Date]' === toString.call(x)
   },
 
-   getConfig(spec: any) {
+  getConfig(spec: any) {
     let conf
 
     if ('string' === typeof spec) {
       const urlM = /^postgres:\/\/((.*?):(.*?)@)?(.*?)(:?(\d+))?\/(.*?)$/.exec(spec)
 
-      if (!urlM)
-      {
+      if (!urlM) {
         return null
       }
       conf = {
@@ -334,7 +333,7 @@ const intern = {
     return conf
   },
 
-   makeent(ent: any, row: any) {
+  makeent(ent: any, row: any) {
     if (!row) {
       return null
     }
@@ -363,7 +362,7 @@ const intern = {
     return ent.make$(entp)
   },
 
-   async isUpdate(knex: Knex, ent: any, q: any) {
+  async isUpdate(knex: Knex, ent: any, q: any) {
     // ------------- TODO - UPSERT ----------------//
     // const isUpsert = q.upsert$ ? true : false
 
@@ -386,22 +385,14 @@ const intern = {
 
     return isUpdate
   },
-  
+
   async getKnexClient(knex: Knex, seneca: any, msg: any, meta: any) {
     let transaction = seneca.entity.state().transaction
 
-    if(transaction && !transaction.finish && false !== msg.transaction$) {
-      const trx = await knex.transaction()
-
-      transaction.trace.push({
-        when: Date.now(),
-        msg,
-        meta,
-      })
-      transaction.client = trx
-
-      return trx
+    if (transaction && !transaction.finish && false !== msg.transaction$) {
+      return transaction.handle
     }
+
     return knex
   }
 }

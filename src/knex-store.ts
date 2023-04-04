@@ -1,6 +1,6 @@
 /* Copyright (c) 2010-2022 Richard Rodger and other contributors, MIT License */
-import intern from './intern'
-import knex from 'knex'
+import Intern from './intern'
+import Knex from 'knex'
 
 const STORE_NAME = 'knex-store'
 
@@ -17,11 +17,11 @@ function knex_store(this: any, options: Options) {
   // Take a reference to the calling Seneca instance
   const seneca = this
 
-  let db : any
+  let rootKnexClient: any
 
   function configure(spec: any, done: any) {
 
-    db = knex(spec)
+    rootKnexClient = Knex(spec)
 
     return done()
 
@@ -35,39 +35,39 @@ function knex_store(this: any, options: Options) {
     name: STORE_NAME,
 
     save: async function (this: any, msg: any, reply: any) {
-        const seneca = this
-        const { ent, q } = msg
-        
-        const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
+      const seneca = this
+      const { ent, q } = msg
 
-        async function do_create() {
-          // create a new entity
-          try {
-            const newEnt = ent.clone$()
+      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
 
-            if (ent.id$) {
-              newEnt.id = ent.id$
-            }
+      async function do_create() {
+        // create a new entity
+        try {
+          const newEnt = ent.clone$()
 
-            const doCreate = await intern.insertKnex(knexClient, newEnt)
-
-            return doCreate
-          } catch (err) {
-            return err
+          if (ent.id$) {
+            newEnt.id = ent.id$
           }
+
+          const doCreate = await Intern.insertKnex(knexClient, newEnt)
+
+          return doCreate
+        } catch (err) {
+          return err
         }
+      }
 
-        // Save an existing entity
-        async function do_save() {
-          const doSave = await intern.updateKnex(knexClient , ent)
-          // call the reply callback with the
-          // updated entity
-          return doSave
-        }
+      // Save an existing entity
+      async function do_save() {
+        const doSave = await Intern.updateKnex(knexClient, ent)
+        // call the reply callback with the
+        // updated entity
+        return doSave
+      }
 
 
-        const save = (await intern.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create()
-        return reply(null, save)
+      const save = (await Intern.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create()
+      return reply(null, save)
     },
 
     load: async function (this: any, msg: any, reply: any) {
@@ -75,9 +75,9 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
+      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
 
-      const load = await intern.firstKnex(knexClient, qent, q)
+      const load = await Intern.firstKnex(knexClient, qent, q)
       reply(null, load)
     },
 
@@ -86,9 +86,9 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
-      
-      const list = await intern.findKnex(knexClient, qent, q)
+      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
+
+      const list = await Intern.findKnex(knexClient, qent, q)
       reply(null, list)
     },
 
@@ -97,19 +97,19 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const knexClient = await intern.getKnexClient(db, seneca, msg, meta)
+      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
 
-      const remove = await intern.removeKnex(knexClient, qent, q)
+      const remove = await Intern.removeKnex(knexClient, qent, q)
       reply(null, remove)
     },
 
     native: function (_msg: any, reply: any) {
-      reply({ native: ()=> db })
+      reply({ native: () => rootKnexClient })
     },
 
     close: function (_msg: any, reply: any) {
-      reply({ native: ()=> db }).then(() => {
-        db.destroy()
+      reply({ native: () => rootKnexClient }).then(() => {
+        rootKnexClient.destroy()
       })
     },
   }
@@ -123,56 +123,60 @@ function knex_store(this: any, options: Options) {
     }
   )
 
-  seneca.add('sys:entity,transaction:begin', async function(this: any, msg: any,reply: any) {
-      reply({
-        get_handle: () => ({ id: this.util.Nid(), name: 'knex' })
-      })
+  seneca.add('sys:entity,transaction:begin', async function (this: any, msg: any, reply: any) {
+    const trxKnexClient = await rootKnexClient.transaction()
+
+    reply({
+      get_handle: () => trxKnexClient
+    })
   })
+
 
   seneca.add(
     'sys:entity,transaction:end',
-    async function (msg: any, reply: any) {
-      const transaction = msg.details()
-      const client = transaction.client
+    function (msg: any, reply: any) {
+      const transactionDetails = msg.get_transaction()
+      const trxKnexClient = transactionDetails.handle
 
-      try {
-        const commit = await client.commit()
-
-        if (commit) {
+      trxKnexClient
+        .commit()
+        .then(() => {
           reply({
             done: true,
           })
-        }
-      } catch (err) {
-        reply(err)
-      }
-    }
-  )
+        })
+        .catch(reply)
+    })
+
 
   seneca.add(
     'sys:entity,transaction:rollback',
-    async function (msg: any, reply: any) {
-      const transaction = msg.details()
-      const client = transaction.client
-      try {
-        await client.rollback();
+    function (msg: any, reply: any) {
+      const transactionDetails = msg.get_transaction()
+      const trxKnexClient = transactionDetails.handle
+
+      trxKnexClient
+        .rollback()
+        .then(() => {
           reply({
             done: false,
             rollback: true,
           })
-      } catch (err) {
-        reply(err)
-      }
+        })
+        .catch((err: any) => {
+          console.log('WWW', err)
+          reply(err)
+        })
     }
   )
 
-  seneca.message(
+
+  seneca.add(
     'sys:entity,transaction:adopt',
-    async function (msg: any, reply: any) {
-      const trxProvider = msg.get_handle()
-      trxProvider.then((trx: any) => {
-        reply({ get_handle: () => trx })
-      })
+    function (msg: any, reply: any) {
+      const trxKnexClient = msg.get_handle()
+      // Since transaction already exists, no need to do anything, just return it
+      reply({ get_handle: () => trxKnexClient })
     }
   )
 

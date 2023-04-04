@@ -303,14 +303,7 @@ const intern = {
     async getKnexClient(knex, seneca, msg, meta) {
         let transaction = seneca.entity.state().transaction;
         if (transaction && !transaction.finish && false !== msg.transaction$) {
-            const trx = await knex.transaction();
-            transaction.trace.push({
-                when: Date.now(),
-                msg,
-                meta,
-            });
-            transaction.client = trx;
-            return trx;
+            return transaction.handle;
         }
         return knex;
     }
