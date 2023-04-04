@@ -5,7 +5,9 @@ const { before, describe, it, beforeEach, afterEach } = lab
 const { expect } = require('@hapi/code')
 const Shared = require('seneca-store-test')
 const Async = require('async')
-const knex = require('knex')
+const Knex = require('knex')
+const Uuid = require('uuid').v4
+
 
 const KnexStore = require('../src/knex-store')
 
@@ -263,25 +265,23 @@ describe('transaction', function () {
 
 
   it('adopt-commit', async () => {
-    let fooKnexTest_id
+    const fooKnexTest_id = Uuid()
     let foo1_id
     let foo2_id
 
-    const trx = await knex(DbConfigPG).transaction()
+    const trx = await Knex(DbConfigPG).transaction()
 
-    //Testing Knex client directly using the transaction
-    trx('foo').insert({p1:'tx'}).returning('*').then(trx.commit)
-    .then((result) => {
-      expect(result[0].p1).equal('tx')
-      fooKnexTest_id = result[0].id
-    })
+    //I'm using the same Knex instance directly to insert a row
+    const knexInsert = await trx('foo')
+    .insert({p1:'tx', id: fooKnexTest_id})
+    .returning('*')
+    // await trx.commit()
+    expect(knexInsert[0].p1).equal('tx')
 
     //I'm using the same Knex instance directly to delete the row created above
-    trx('foo').where('id', fooKnexTest_id).del().then(trx.commit)
-    .then((result) => {
-      //Knex returns the number of rows deleted
-      expect(result).equal(1)
-    })
+    const knexDelete = await trx('foo').where('id', fooKnexTest_id).del()
+    await trx.commit()
+    expect(knexDelete).equal(1)
 
     const txseneca  = await si.entity.adopt({handle:trx})
 
@@ -333,31 +333,27 @@ describe('transaction', function () {
 
   it('adopt-knex-direct', async () => {
     //Creating Knex instance directly to insert a row
-    const trx = await knex(DbConfigPG).transaction()
+    const trx = await Knex(DbConfigPG).transaction()
 
     //Testing Knex client directly using the transaction, I'm inserting a row
-    trx('foo').insert({p1:'tx'}).returning('*').then(trx.commit)
-    .then((result) => {
-      expect(result[0].p1).equal('tx')
-    })
+    const knexInsert = await trx('foo').insert({p1:'tx'}).returning('*')
+    await trx.commit()
+    expect(knexInsert[0].p1).equal('tx')
 
     //I'm using the same Knex instance directly to list the rows
-    trx('foo').select('*').then(trx.commit)
-    .then((result) => {
-      expect(result.length).equal(1)
-    })
+    const knexSelect = await trx('foo').select('*')
+    await trx.commit()
+    expect(knexSelect.length).equal(1)
     
     //I'm using the same Knex instance directly to delete the row created above
-    trx('foo').where('p1', 'tx').del().then(trx.commit)
-    .then((result) => {
-      expect(result).equal(1)
-    })
+    const knexDelete = await trx('foo').where('p1', 'tx').del()
+    await trx.commit()
+    expect(knexDelete).equal(1)
 
     //Same Knex instance directly to list the rows, it should be empty
-    trx('foo').select('*').then(trx.commit)
-    .then((result) => {
-      expect(result.length).equal(0)
-    })
+    const knexSelect2 = await trx('foo').select('*')
+    await trx.commit()
+    expect(knexSelect2.length).equal(0)
 
     //Testing reusability of the same Knex instance
     await trx('foo').insert({p1:'tx'})
@@ -367,14 +363,14 @@ describe('transaction', function () {
     await trx.commit()
 
     //Same Knex instance directly to list the rows, it should be 4
-    trx('foo').select('*').then(trx.commit).then((result) => {
-      expect(result.length).equal(4)
-    })
+    const knexSelect3 = await trx('foo').select('*')
+    await trx.commit()
+    expect(knexSelect3.length).equal(4)
   })
 
 
   it('adopt-rollback', async () => {
-    const trx = await knex(DbConfigPG).transaction()
+    const trx = await Knex(DbConfigPG).transaction()
 
     //Testing Knex client directly using the transaction, I'm inserting a row
     //And then I'm rolling back the transaction
