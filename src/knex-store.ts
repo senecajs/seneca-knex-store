@@ -169,8 +169,7 @@ function knex_store(this: any, options: Options) {
   seneca.message(
     'sys:entity,transaction:adopt',
     async function (msg: any, reply: any) {
-      const transaction = msg.details()
-      const trxProvider = transaction.handle
+      const trxProvider = msg.get_handle()
       trxProvider.then((trx: any) => {
         reply({ get_handle: () => trx })
       })
