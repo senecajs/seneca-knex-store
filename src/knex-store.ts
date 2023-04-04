@@ -166,6 +166,16 @@ function knex_store(this: any, options: Options) {
     }
   )
 
+  seneca.message(
+    'sys:entity,transaction:adopt',
+    async function (msg: any, reply: any) {
+      const trxProvider = msg.get_handle()
+      trxProvider.then((trx: any) => {
+        reply({ get_handle: () => trx })
+      })
+    }
+  )
+
   // We don't return the store itself, it will self load into Seneca via the
   // init() function. Instead we return a simple object with the stores name
   // and generated meta tag.
