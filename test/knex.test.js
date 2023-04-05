@@ -323,10 +323,6 @@ describe('transaction', function () {
 
   it('adopt-rollback', async () => {
     const trx = await Knex(DbConfigPG).transaction()
-
-    // const foo1s = await trx.select('*').from('foo')
-    // console.log('foo1s After RB', foo1s)
-    // expect(foo0s[0].p1).not.equal('t0')
     
     const s0  = await si.entity.adopt(trx)
 
@@ -358,16 +354,6 @@ describe('transaction', function () {
 
   it('adopt-rollback-on-error', async () => {
     const trx = await Knex(DbConfigPG).transaction()
-
-    // const foo0s = await trx('foo')
-    //       .insert({p1:'t0', id: 't0'})
-    //       .returning('*')
-    // expect(foo0s[0].p1).equal('t0')
-    // console.log('foo0s Before RB', foo0s)
-
-    // trx.rollback()
-    // console.log('foo0s After RB', foo0s)
-    // expect(foo0s[0].p1).not.equal('t0')
     
     si.message('foo:red', async function foo_red(msg) {
       await this.entity('foo').data$({p1:'t1'}).save$()
@@ -402,6 +388,25 @@ describe('transaction', function () {
     }
 
     throw new Error('expected the call to throw')
+  })
+
+
+  it('adopt-rollback-direct', async () => {
+    const trx = await Knex(DbConfigPG).transaction()
+
+    const foo0s = await trx('foo')
+          .insert({p1:'t0', id: 't0'})
+          .returning('*')
+    expect(foo0s[0].p1).equal('t0')
+
+    trx.rollback()
+
+    const isCompleted = await trx.isCompleted()
+    expect(isCompleted).equal(true)
+
+    const foo1s = await Knex(DbConfigPG).select('*').from('foo')
+    expect(foo1s.length).equal(0)
+
   })
 
 })
