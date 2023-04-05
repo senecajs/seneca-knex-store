@@ -243,7 +243,6 @@ describe('transaction', function () {
 
     
     const txr0 = await s0.entity.rollback()
-    console.log('txr0',txr0)
     expect(txr0.id).equal(txid)
     
     expect(txr0).include({result: { done: false, rollback: true }})
@@ -269,8 +268,6 @@ describe('transaction', function () {
     let s0 = await si.entity.begin()
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
-
-    console.log('txid', txid)
     
     try {
       await s0.post('foo:red')
@@ -324,152 +321,94 @@ describe('transaction', function () {
     expect(foos[1].p1).equal('t1')
   })
 
-
-  // it('adopt-commit', async () => {
-  //   const fooKnexTest_id = Uuid()
-  //   let foo1_id
-  //   let foo2_id
-
-  //   const trx = await Knex(DbConfigPG).transaction()
-
-  //   //I'm using the same Knex instance directly to insert a row
-  //   const knexInsert = await trx('foo')
-  //   .insert({p1:'tx', id: fooKnexTest_id})
-  //   .returning('*')
-  //   // await trx.commit()
-  //   expect(knexInsert[0].p1).equal('tx')
-
-  //   //I'm using the same Knex instance directly to delete the row created above
-  //   const knexDelete = await trx('foo').where('id', fooKnexTest_id).del()
-
-  //   // await trx.commit()
-  //   // expect(knexDelete).equal(1)
-
-  //   const txseneca  = await si.entity.adopt(trx)
-
-  //   // console.log(txseneca.entity.state())
-
+  it('adopt-rollback', async () => {
+    const trx = await Knex(DbConfigPG).transaction()
     
+    const s0  = await si.entity.adopt(trx)
+
+    let txid = s0.entity.state().transaction.id
+    expect(txid).exists()
     
-  //   //I'm checking the state of the transaction inside seneca, if it exists...
-  //   const isTransaction = !!txseneca.entity.state().transaction
-  //   expect(isTransaction).equal(true)
+    await s0.entity('foo').data$({p1:'t2'}).save$()
 
-  //   //I'm using the same Knex instance....
-  //   const foo1 = await txseneca.entity('foo').data$({p1:'t1'}).save$()
-  //   foo1_id = foo1.id
+    let foos = await s0.entity('foo').list$()
+    expect(foos.length).equal(1)
 
-  //   const foo2 = await txseneca.entity('foo').data$({p1:'t2'}).save$()
-  //   foo2_id = foo2.id
-
-
+    foos = await si.entity('foo').list$()
+    expect(foos.length).equal(0)
     
-  //   //I'm checking the state of the transaction, I have not committed yet
-  //   //so isCompleted should be false and the list should be empty
-  //   const isCompleted1 = txseneca.client.isCompleted()
-  //   expect(isCompleted1).equal(false)
-  //   let listFoo1 = await si.entity('foo').list$()
-  //   expect(listFoo1.length).equal(0)
+    const txr0 = await s0.entity.rollback()
+    expect(txr0.id).equal(txid)
     
-  //   //I'm updating the second element, using the same Knex instance
-  //   await txseneca.entity('foo').
-  //   data$({ p1: 't3', id: foo2_id })
-  //   .save$()
+    expect(txr0).include({result: { done: false, rollback: true }})
 
-  //   //I have not committed yet, so the list should be empty
-  //   let listFoo2 = await si.entity('foo').list$()
-  //   expect(listFoo2.length).equal(0)
+    foos = await si.entity('foo').list$()
+    expect(foos.length).equal(0)
 
-  //   //I'm removing the first element, using the same Knex instance
-  //   await txseneca.entity('foo')
-  //   .data$({ id: foo1_id })
-  //   .remove$()
+    const txe0 = await s0.entity.end()
+    expect(txe0.id).equal(txid)
 
-  //   //I'm committing the transaction, using the same Knex instance
-  //   //So I'm expecting the first element to be removed and the second
-  //   //only element available to be t3 (the updated value)
-  //   const tx1 = await txseneca.entity.end()
-  //   let foosCommit = await si.entity('foo').list$()
-  //   expect(foosCommit.length).equal(1)
-  //   expect(foosCommit[1].p1).equal('t3')
+    foos = await si.entity('foo').list$()
+    expect(foos.length).equal(0)
+  })
 
-  //   //I'm checking the state of the transaction, I have committed
-  //   //so isCompleted should be true
-  //   const isCompleted2 = tx1.client.isCompleted()
-  //   expect(isCompleted2).equal(true)
-
-  // })
-
-  // it('adopt-knex-direct', async () => {
-  //   //Creating Knex instance directly to insert a row
-  //   const trx = await Knex(DbConfigPG).transaction()
-
-  //   //Testing Knex client directly using the transaction, I'm inserting a row
-  //   const knexInsert = await trx('foo').insert({p1:'tx'}).returning('*')
-  //   await trx.commit()
-  //   expect(knexInsert[0].p1).equal('tx')
-
-  //   //I'm using the same Knex instance directly to list the rows
-  //   const knexSelect = await trx('foo').select('*')
-  //   await trx.commit()
-  //   expect(knexSelect.length).equal(1)
+  it('adopt-rollback-on-error', async () => {
+    const trx = await Knex(DbConfigPG).transaction()
     
-  //   //I'm using the same Knex instance directly to delete the row created above
-  //   const knexDelete = await trx('foo').where('p1', 'tx').del()
-  //   await trx.commit()
-  //   expect(knexDelete).equal(1)
-
-  //   //Same Knex instance directly to list the rows, it should be empty
-  //   const knexSelect2 = await trx('foo').select('*')
-  //   await trx.commit()
-  //   expect(knexSelect2.length).equal(0)
-
-  //   //Testing reusability of the same Knex instance
-  //   await trx('foo').insert({p1:'tx'})
-  //   await trx('foo').insert({p1:'tx1'})
-  //   await trx('foo').insert({p1:'tx2'})
-  //   await trx('foo').insert({p1:'tx3'})
-  //   await trx.commit()
-
-  //   //Same Knex instance directly to list the rows, it should be 4
-  //   const knexSelect3 = await trx('foo').select('*')
-  //   await trx.commit()
-  //   expect(knexSelect3.length).equal(4)
-  // })
-
-
-  // it('adopt-rollback', async () => {
-  //   const trx = await Knex(DbConfigPG).transaction()
-
-  //   //Testing Knex client directly using the transaction, I'm inserting a row
-  //   //And then I'm rolling back the transaction
-  //   trx('foo').insert({p1:'tx'}).returning('*').then(trx.rollback)
-  //   .then((result) => {
-  //     expect(result[0].p1).not.equal('tx')
-  //   })
-
-  //   const txseneca = await si.entity.adopt({handle:trx})
-
-  //   //I'm checking the state of the transaction inside seneca, if it exists...
-  //   const isTransaction = !!txseneca.entity.state().transaction
-  //   expect(isTransaction).equal(true)
-
-  //   //I'm using the same Knex instance....
-  //   const foo1 = await txseneca.entity('foo').data$({p1:'t1'}).save$()
-  //   await txseneca.entity.rollback()
-  //   expect(foo1.id).equal(undefined)
-  //   const foo2 = await txseneca.entity('foo').data$({p1:'t2'}).save$()
-  //   await txseneca.entity.rollback()
-  //   expect(foo2.id).equal(undefined)
+    si.message('foo:red', async function foo_red(msg) {
+      await this.entity('foo').data$({p1:'t1'}).save$()
+      throw new Error('BAD')
+    })
     
-  //   //I'm checking the state of the transaction, I have not committed yet
-  //   //so isCompleted should be true and the list should be empty
-  //   const isCompleted1 = txseneca.client.isCompleted()
-  //   expect(isCompleted1).equal(true)
-  //   let listFoo1 = await si.entity('foo').list$()
-  //   expect(listFoo1.length).equal(0)
+    const s0  = await si.entity.adopt(trx)
 
-  // })
+    let txid = s0.entity.state().transaction.id
+    expect(txid).exists()
+    
+    try {
+      await s0.post('foo:red')
+    }
+    catch(err) {
+      expect(err.message).equal('seneca: Action foo:red failed: BAD.')
+
+      let t0e = s0.entity.state()
+      expect(t0e.transaction.id).equal(txid)
+
+      let foos = await si.entity('foo').list$()
+      expect(foos.length).equal(0)
+
+      // idempotent
+      const txe0 = await s0.entity.end()
+      expect(txe0.id).equal(txid)
+      
+      foos = await si.entity('foo').list$()
+      expect(foos.length).equal(0)
+
+      return
+    }
+
+    throw new Error('expected the call to throw')
+  })
+
+
+  it('adopt-rollback-direct', async () => {
+    const trx = await Knex(DbConfigPG).transaction()
+
+    const foo0s = await trx('foo')
+          .insert({p1:'t0', id: 't0'})
+          .returning('*')
+    expect(foo0s[0].p1).equal('t0')
+
+    trx.rollback()
+
+    const isCompleted = await trx.isCompleted()
+    expect(isCompleted).equal(true)
+
+    const foo1s = await Knex(DbConfigPG).select('*').from('foo')
+    expect(foo1s.length).equal(0)
+
+  })
+
 })
 
 function makeSenecaForTest(DbConfig, opts = {}) {
