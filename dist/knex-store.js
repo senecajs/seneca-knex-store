@@ -86,13 +86,13 @@ function knex_store(options) {
     seneca.add({ init: store.name, tag: meta.tag }, function (_msg, done) {
         return configure(options, done);
     });
-    seneca.add('sys:entity,transaction:begin', async function (msg, reply) {
+    seneca.add('sys:entity,transaction:transaction', async function (msg, reply) {
         const trxKnexClient = await rootKnexClient.transaction();
         reply({
             get_handle: () => trxKnexClient
         });
     });
-    seneca.add('sys:entity,transaction:end', function (msg, reply) {
+    seneca.add('sys:entity,transaction:commit', function (msg, reply) {
         const transactionDetails = msg.get_transaction();
         const trxKnexClient = transactionDetails.handle;
         trxKnexClient

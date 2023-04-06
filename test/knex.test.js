@@ -6,8 +6,6 @@ const { expect } = require('@hapi/code')
 const Shared = require('seneca-store-test')
 const Async = require('async')
 const Knex = require('knex')
-const Uuid = require('uuid').v4
-
 
 const KnexStore = require('../src/knex-store')
 
@@ -209,12 +207,12 @@ describe('transaction', function () {
 
   it('happy', async () => {
 
-    const s0 = await si.entity.begin()
+    const s0 = await si.entity.transaction()
     // console.log(s0.entity.state())
     
     const foo1 = await s0.entity('foo').data$({p1:'t1'}).save$()
     
-    const tx0 = await s0.entity.end()
+    const tx0 = await s0.entity.commit()
 
     const isCompleted = tx0.handle.isCompleted()
 
@@ -228,7 +226,7 @@ describe('transaction', function () {
 
   
   it('rollback-direct', async () => {
-    const s0 = await si.entity.begin()
+    const s0 = await si.entity.transaction()
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
     
@@ -251,7 +249,7 @@ describe('transaction', function () {
     expect(foos.length).equal(0)
 
     // idempotent
-    const txe0 = await s0.entity.end()
+    const txe0 = await s0.entity.commit()
     expect(txe0.id).equal(txid)
 
     foos = await si.entity('foo').list$()
@@ -265,7 +263,7 @@ describe('transaction', function () {
       throw new Error('BAD')
     })
 
-    let s0 = await si.entity.begin()
+    let s0 = await si.entity.transaction()
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
     
@@ -282,7 +280,7 @@ describe('transaction', function () {
       expect(foos.length).equal(0)
 
       // idempotent
-      const txe0 = await s0.entity.end()
+      const txe0 = await s0.entity.commit()
       expect(txe0.id).equal(txid)
       
       foos = await si.entity('foo').list$()
@@ -307,7 +305,7 @@ describe('transaction', function () {
     const s0  = await si.entity.adopt(trx)
     const foo1 = await s0.entity('foo').data$({p1:'t1'}).save$()
     
-    const tx0 = await s0.entity.end()
+    const tx0 = await s0.entity.commit()
 
     const isCompleted = tx0.handle.isCompleted()
 
@@ -345,7 +343,7 @@ describe('transaction', function () {
     foos = await si.entity('foo').list$()
     expect(foos.length).equal(0)
 
-    const txe0 = await s0.entity.end()
+    const txe0 = await s0.entity.commit()
     expect(txe0.id).equal(txid)
 
     foos = await si.entity('foo').list$()
@@ -378,7 +376,7 @@ describe('transaction', function () {
       expect(foos.length).equal(0)
 
       // idempotent
-      const txe0 = await s0.entity.end()
+      const txe0 = await s0.entity.commit()
       expect(txe0.id).equal(txid)
       
       foos = await si.entity('foo').list$()
