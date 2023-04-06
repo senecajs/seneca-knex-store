@@ -6,8 +6,6 @@ const { expect } = require('@hapi/code')
 const Shared = require('seneca-store-test')
 const Async = require('async')
 const Knex = require('knex')
-const Uuid = require('uuid').v4
-
 
 const KnexStore = require('../src/knex-store')
 
