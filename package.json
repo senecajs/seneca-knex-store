@@ -1,6 +1,6 @@
 {
   "name": "@seneca/knex-store",
-  "version": "7.0.1",
+  "version": "7.1.0",
   "description": "Seneca data storag plugin for Knex.",
   "main": "dist/knex-store.js",
   "types": "dist/knex-store.d.ts",
@@ -48,7 +48,7 @@
   "peerDependencies": {
     "knex": ">=2.0.0",
     "seneca": ">=3",
-    "seneca-entity": ">=21.1"
+    "seneca-entity": ">=22.0"
   },
   "devDependencies": {
     "knex": ">=2.0.0",

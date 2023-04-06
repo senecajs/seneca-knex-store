@@ -13,7 +13,10 @@ function QBuilder(knex) {
         },
         insert(args) {
             if (args.upsert) {
-                return knex(args.table_name).insert(args.data).onConflict(args.upsert).merge();
+                return knex(args.table_name)
+                    .insert(args.data)
+                    .onConflict(args.upsert)
+                    .merge();
             }
             return knex(args.table_name).insert(args.data).returning('*');
         },
@@ -61,13 +64,16 @@ function QBuilder(knex) {
                     .first();
             }
             if (args.skip) {
-                return knex(args.table_name).where(args.filter).offset(args.skip).first();
+                return knex(args.table_name)
+                    .where(args.filter)
+                    .offset(args.skip)
+                    .first();
             }
             return knex(args.table_name).where(args.filter).first();
         },
         raw(args) {
             return knex.raw(args.query, args.data);
-        }
+        },
     };
     return Q;
 }

@@ -4,7 +4,6 @@ const Seneca = require('seneca')
 run()
 
 async function run() {
-
   const configDB = {
     client: 'pg',
     connection: {
@@ -17,18 +16,18 @@ async function run() {
   }
 
   const seneca = Seneca()
-        .test()
-        .use('promisify')
-        .use('entity', {
-          transaction: { active: true }
-        })
-        .use('..', configDB)
+    .test()
+    .use('promisify')
+    .use('entity', {
+      transaction: { active: true },
+    })
+    .use('..', configDB)
 
   await seneca.ready()
-  
+
   const s0 = await seneca.entity.begin()
 
-  const test = await s0.entity('foo').data$({p1:'t2'}).save$()
+  const test = await s0.entity('foo').data$({ p1: 't2' }).save$()
   console.log('test', test)
 
   const tx0 = await s0.entity.rollback()
@@ -38,5 +37,5 @@ async function run() {
   console.log('isCompleted', isCompleted)
 
   let foos = await seneca.entity('foo').list$()
-  console.log("foos", foos)
+  console.log('foos', foos)
 }

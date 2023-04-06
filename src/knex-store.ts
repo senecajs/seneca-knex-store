@@ -20,11 +20,9 @@ function knex_store(this: any, options: Options) {
   let rootKnexClient: any
 
   function configure(spec: any, done: any) {
-
     rootKnexClient = Knex(spec)
 
     return done()
-
   }
 
   // Define the store using a description object.
@@ -38,7 +36,12 @@ function knex_store(this: any, options: Options) {
       const seneca = this
       const { ent, q } = msg
 
-      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
+      const knexClient = await Intern.getKnexClient(
+        rootKnexClient,
+        seneca,
+        msg,
+        meta
+      )
 
       async function do_create() {
         // create a new entity
@@ -65,8 +68,9 @@ function knex_store(this: any, options: Options) {
         return doSave
       }
 
-
-      const save = (await Intern.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create()
+      const save = (await Intern.isUpdate(knexClient, ent, q))
+        ? await do_save()
+        : await do_create()
       return reply(null, save)
     },
 
@@ -75,7 +79,12 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
+      const knexClient = await Intern.getKnexClient(
+        rootKnexClient,
+        seneca,
+        msg,
+        meta
+      )
 
       const load = await Intern.firstKnex(knexClient, qent, q)
       reply(null, load)
@@ -86,7 +95,12 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
+      const knexClient = await Intern.getKnexClient(
+        rootKnexClient,
+        seneca,
+        msg,
+        meta
+      )
 
       const list = await Intern.findKnex(knexClient, qent, q)
       reply(null, list)
@@ -97,7 +111,12 @@ function knex_store(this: any, options: Options) {
       const qent = msg.qent
       const q = msg.q || {}
 
-      const knexClient = await Intern.getKnexClient(rootKnexClient, seneca, msg, meta)
+      const knexClient = await Intern.getKnexClient(
+        rootKnexClient,
+        seneca,
+        msg,
+        meta
+      )
 
       const remove = await Intern.removeKnex(knexClient, qent, q)
       reply(null, remove)
@@ -123,31 +142,30 @@ function knex_store(this: any, options: Options) {
     }
   )
 
-  seneca.add('sys:entity,transaction:transaction', async function (this: any, msg: any, reply: any) {
-    const trxKnexClient = await rootKnexClient.transaction()
-
-    reply({
-      get_handle: () => trxKnexClient
-    })
-  })
-
-
   seneca.add(
-    'sys:entity,transaction:commit',
-    function (msg: any, reply: any) {
-      const transactionDetails = msg.get_transaction()
-      const trxKnexClient = transactionDetails.handle
+    'sys:entity,transaction:transaction',
+    async function (this: any, msg: any, reply: any) {
+      const trxKnexClient = await rootKnexClient.transaction()
 
-      trxKnexClient
-        .commit()
-        .then(() => {
-          reply({
-            done: true,
-          })
+      reply({
+        get_handle: () => trxKnexClient,
+      })
+    }
+  )
+
+  seneca.add('sys:entity,transaction:commit', function (msg: any, reply: any) {
+    const transactionDetails = msg.get_transaction()
+    const trxKnexClient = transactionDetails.handle
+
+    trxKnexClient
+      .commit()
+      .then(() => {
+        reply({
+          done: true,
         })
-        .catch(reply)
-    })
-
+      })
+      .catch(reply)
+  })
 
   seneca.add(
     'sys:entity,transaction:rollback',
@@ -170,15 +188,11 @@ function knex_store(this: any, options: Options) {
     }
   )
 
-
-  seneca.add(
-    'sys:entity,transaction:adopt',
-    function (msg: any, reply: any) {
-      const trxKnexClient = msg.get_handle()
-      // Since transaction already exists, no need to do anything, just return it
-      reply({ get_handle: () => trxKnexClient })
-    }
-  )
+  seneca.add('sys:entity,transaction:adopt', function (msg: any, reply: any) {
+    const trxKnexClient = msg.get_handle()
+    // Since transaction already exists, no need to do anything, just return it
+    reply({ get_handle: () => trxKnexClient })
+  })
 
   // We don't return the store itself, it will self load into Seneca via the
   // init() function. Instead we return a simple object with the stores name

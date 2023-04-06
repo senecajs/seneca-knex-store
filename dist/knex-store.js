@@ -46,7 +46,9 @@ function knex_store(options) {
                 // updated entity
                 return doSave;
             }
-            const save = (await intern_1.default.isUpdate(knexClient, ent, q)) ? await do_save() : await do_create();
+            const save = (await intern_1.default.isUpdate(knexClient, ent, q))
+                ? await do_save()
+                : await do_create();
             return reply(null, save);
         },
         load: async function (msg, reply) {
@@ -89,7 +91,7 @@ function knex_store(options) {
     seneca.add('sys:entity,transaction:transaction', async function (msg, reply) {
         const trxKnexClient = await rootKnexClient.transaction();
         reply({
-            get_handle: () => trxKnexClient
+            get_handle: () => trxKnexClient,
         });
     });
     seneca.add('sys:entity,transaction:commit', function (msg, reply) {

@@ -1,25 +1,30 @@
 import QBuilder from './qbuilder'
 const Uuid = require('uuid').v4
-import type { Knex } from 'knex';
-
+import type { Knex } from 'knex'
 
 const intern = {
-
   async findKnex(knex: Knex, ent: any, q: any): Promise<any> {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
     const isQArray = Array.isArray(q)
 
-    const filter = intern.isObjectEmpty(q) ? { ...entp } : isQArray ? q : { ...q }
+    const filter = intern.isObjectEmpty(q)
+      ? { ...entp }
+      : isQArray
+      ? q
+      : { ...q }
 
     if (filter.native$) {
-      const argsNative = typeof filter.native$ === 'string' ? {
-        query: filter.native$
-      } : {
-        query: filter.native$[0],
-        data: filter.native$.slice(1)
-      }
+      const argsNative =
+        typeof filter.native$ === 'string'
+          ? {
+              query: filter.native$,
+            }
+          : {
+              query: filter.native$[0],
+              data: filter.native$.slice(1),
+            }
       const query = await QBuilder(knex).raw(argsNative)
       return query.rows.map((row: any) => intern.makeent(ent, row))
     }
@@ -29,12 +34,11 @@ const intern = {
     let limit = null
 
     if (filter.sort$) {
-
-      const firstKey = Object.keys(filter.sort$)[0];
+      const firstKey = Object.keys(filter.sort$)[0]
       const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
       sort = {
         field: firstKey,
-        order: sortValue
+        order: sortValue,
       }
 
       delete filter.sort$
@@ -56,12 +60,11 @@ const intern = {
       isArray: isQArray,
       sort,
       skip,
-      ...(limit && { limit })
+      ...(limit && { limit }),
     }
 
     const query = await QBuilder(knex).select(args)
     return query.map((row: any) => intern.makeent(ent, row))
-
   },
 
   async firstKnex(knex: Knex, ent: any, q: any): Promise<any> {
@@ -71,12 +74,11 @@ const intern = {
     let skip = null
 
     if (q.sort$) {
-
-      const firstKey = Object.keys(q.sort$)[0];
+      const firstKey = Object.keys(q.sort$)[0]
       const sortValue = q.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
       sort = {
         field: firstKey,
-        order: sortValue
+        order: sortValue,
       }
 
       delete q.sort$
@@ -95,7 +97,7 @@ const intern = {
       table_name: ent_table,
       filter: q,
       sort,
-      skip
+      skip,
     }
 
     const query = await QBuilder(knex).first(args)
@@ -141,7 +143,7 @@ const intern = {
     const args = {
       table_name: ent_table,
       data: rest,
-      id: id
+      id: id,
     }
 
     const query = await QBuilder(knex).update(args)
@@ -184,13 +186,12 @@ const intern = {
     }
 
     if (filter.sort$ || (all && skip)) {
-
       if (filter.sort$) {
-        const firstKey = Object.keys(filter.sort$)[0];
+        const firstKey = Object.keys(filter.sort$)[0]
         const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC'
         sort = {
           field: firstKey,
-          order: sortValue
+          order: sortValue,
         }
       }
 
@@ -201,7 +202,7 @@ const intern = {
         table_name: ent_table,
         filter,
         sort,
-        skip
+        skip,
       }
 
       if (all) {
@@ -210,7 +211,7 @@ const intern = {
           data: filter,
           sort,
           skip,
-          limit
+          limit,
         }
 
         const ids = await QBuilder(knex).select(argsSelect)
@@ -220,24 +221,21 @@ const intern = {
           filter: ids.map((id: any) => id.id),
           isLoad,
           skip,
-          isArray: true
+          isArray: true,
         }
-
 
         await QBuilder(knex).delete(argsDelete)
         return null
-
       }
 
       first = await QBuilder(knex).first(argsFind)
-
     }
 
     const args = {
       table_name: ent_table,
       filter: first ? { id: first.id } : filter,
       isLoad,
-      skip
+      skip,
     }
 
     if (all) {
@@ -245,7 +243,6 @@ const intern = {
       //Knex returns the number of rows affected if delete is ok
       return null
     }
-
 
     const query = await QBuilder(knex).delete(args)
 
@@ -261,7 +258,7 @@ const intern = {
     const args = {
       table_name: ent_table,
       data: data,
-      id: q
+      id: q,
     }
 
     const query = QBuilder(knex).upsert(args)
@@ -305,7 +302,9 @@ const intern = {
     let conf
 
     if ('string' === typeof spec) {
-      const urlM = /^postgres:\/\/((.*?):(.*?)@)?(.*?)(:?(\d+))?\/(.*?)$/.exec(spec)
+      const urlM = /^postgres:\/\/((.*?):(.*?)@)?(.*?)(:?(\d+))?\/(.*?)$/.exec(
+        spec
+      )
 
       if (!urlM) {
         return null
@@ -317,7 +316,6 @@ const intern = {
         password: urlM[3],
         port: urlM[6] ? parseInt(urlM[6], 10) : null,
       }
-
     } else {
       conf = spec
     }
@@ -394,7 +392,7 @@ const intern = {
     }
 
     return knex
-  }
+  },
 }
 
 export default intern

@@ -32,7 +32,6 @@ const DbConfigSQLite = {
 }
 
 describe('standard - postgres', () => {
-
   const senecaForTest = makeSenecaForTest(DbConfigPG)
 
   senecaStoreBasicTests(senecaForTest, DbConfigPG)
@@ -47,7 +46,6 @@ describe('standard - postgres', () => {
 })
 
 describe('standard - sqlite', () => {
-
   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
   senecaStoreBasicTests(senecaForTest, DbConfigSQLite)
@@ -62,7 +60,6 @@ describe('standard - sqlite', () => {
 })
 
 describe('smoke - postgres', function () {
-
   const senecaForTest = makeSenecaForTest(DbConfigPG)
 
   clearDb(senecaForTest)
@@ -71,7 +68,6 @@ describe('smoke - postgres', function () {
 })
 
 describe('smoke - sqlite', function () {
-
   const senecaForTest = makeSenecaForTest(DbConfigSQLite)
 
   clearDb(senecaForTest)
@@ -93,7 +89,7 @@ function senecaStoreSortTests(senecaForTest) {
   describe('sort tests', () => {
     Shared.sorttest({
       seneca: senecaForTest,
-      script: lab
+      script: lab,
     })
   })
 }
@@ -102,7 +98,7 @@ function senecaStoreLimitTests(senecaForTest) {
   describe('limit tests', () => {
     Shared.limitstest({
       seneca: senecaForTest,
-      script: lab
+      script: lab,
     })
   })
 }
@@ -111,7 +107,7 @@ function senecaStoreSQLTests(senecaForTest) {
   describe('sql tests', () => {
     Shared.sqltest({
       seneca: senecaForTest,
-      script: lab
+      script: lab,
     })
   })
 }
@@ -189,13 +185,12 @@ function smokeTests(senecaForTest) {
 }
 
 describe('transaction', function () {
-  const si = makeSenecaForTest(
-    DbConfigPG, 
-    {entity_opts: { transaction: {active:true} }
+  const si = makeSenecaForTest(DbConfigPG, {
+    entity_opts: { transaction: { active: true } },
   })
 
   before(() => {
-    return new Promise(done => {
+    return new Promise((done) => {
       si.ready(done)
     })
   })
@@ -204,19 +199,17 @@ describe('transaction', function () {
 
   afterEach(clearDb(si))
 
-
   it('happy', async () => {
-
     const s0 = await si.entity.transaction()
     // console.log(s0.entity.state())
-    
-    const foo1 = await s0.entity('foo').data$({p1:'t1'}).save$()
-    
+
+    await s0.entity('foo').data$({ p1: 't1' }).save$()
+
     const tx0 = await s0.entity.commit()
 
     const isCompleted = tx0.handle.isCompleted()
 
-    expect(tx0).include({result: { done: true }})
+    expect(tx0).include({ result: { done: true } })
     expect(isCompleted).equal(true)
 
     let foos = await si.entity('foo').list$()
@@ -224,13 +217,12 @@ describe('transaction', function () {
     expect(foos[0].p1).equal('t1')
   })
 
-  
   it('rollback-direct', async () => {
     const s0 = await si.entity.transaction()
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
-    
-    await s0.entity('foo').data$({p1:'t2'}).save$()
+
+    await s0.entity('foo').data$({ p1: 't2' }).save$()
 
     let foos = await s0.entity('foo').list$()
     expect(foos.length).equal(1)
@@ -239,11 +231,10 @@ describe('transaction', function () {
     foos = await si.entity('foo').list$()
     expect(foos.length).equal(0)
 
-    
     const txr0 = await s0.entity.rollback()
     expect(txr0.id).equal(txid)
-    
-    expect(txr0).include({result: { done: false, rollback: true }})
+
+    expect(txr0).include({ result: { done: false, rollback: true } })
 
     foos = await si.entity('foo').list$()
     expect(foos.length).equal(0)
@@ -256,21 +247,19 @@ describe('transaction', function () {
     expect(foos.length).equal(0)
   })
 
-
   it('rollback-on-error', async () => {
     si.message('foo:red', async function foo_red(msg) {
-      await this.entity('foo').data$({p1:'t1'}).save$()
+      await this.entity('foo').data$({ p1: 't1' }).save$()
       throw new Error('BAD')
     })
 
     let s0 = await si.entity.transaction()
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
-    
+
     try {
       await s0.post('foo:red')
-    }
-    catch(err) {
+    } catch (err) {
       expect(err.message).equal('seneca: Action foo:red failed: BAD.')
 
       let t0e = s0.entity.state()
@@ -282,7 +271,7 @@ describe('transaction', function () {
       // idempotent
       const txe0 = await s0.entity.commit()
       expect(txe0.id).equal(txid)
-      
+
       foos = await si.entity('foo').list$()
       expect(foos.length).equal(0)
 
@@ -292,24 +281,20 @@ describe('transaction', function () {
     throw new Error('expected the call to throw')
   })
 
-  
-  
   it('adopt-happy', async () => {
     const trx = await Knex(DbConfigPG).transaction()
 
-    const foo0s = await trx('foo')
-          .insert({p1:'t0', id: 't0'})
-          .returning('*')
+    const foo0s = await trx('foo').insert({ p1: 't0', id: 't0' }).returning('*')
     expect(foo0s[0].p1).equal('t0')
-    
-    const s0  = await si.entity.adopt(trx)
-    const foo1 = await s0.entity('foo').data$({p1:'t1'}).save$()
-    
+
+    const s0 = await si.entity.adopt(trx)
+    await s0.entity('foo').data$({ p1: 't1' }).save$()
+
     const tx0 = await s0.entity.commit()
 
     const isCompleted = tx0.handle.isCompleted()
 
-    expect(tx0).include({result: { done: true }})
+    expect(tx0).include({ result: { done: true } })
     expect(isCompleted).equal(true)
 
     let foos = await si.entity('foo').list$()
@@ -321,24 +306,24 @@ describe('transaction', function () {
 
   it('adopt-rollback', async () => {
     const trx = await Knex(DbConfigPG).transaction()
-    
-    const s0  = await si.entity.adopt(trx)
+
+    const s0 = await si.entity.adopt(trx)
 
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
-    
-    await s0.entity('foo').data$({p1:'t2'}).save$()
+
+    await s0.entity('foo').data$({ p1: 't2' }).save$()
 
     let foos = await s0.entity('foo').list$()
     expect(foos.length).equal(1)
 
     foos = await si.entity('foo').list$()
     expect(foos.length).equal(0)
-    
+
     const txr0 = await s0.entity.rollback()
     expect(txr0.id).equal(txid)
-    
-    expect(txr0).include({result: { done: false, rollback: true }})
+
+    expect(txr0).include({ result: { done: false, rollback: true } })
 
     foos = await si.entity('foo').list$()
     expect(foos.length).equal(0)
@@ -352,21 +337,20 @@ describe('transaction', function () {
 
   it('adopt-rollback-on-error', async () => {
     const trx = await Knex(DbConfigPG).transaction()
-    
+
     si.message('foo:red', async function foo_red(msg) {
-      await this.entity('foo').data$({p1:'t1'}).save$()
+      await this.entity('foo').data$({ p1: 't1' }).save$()
       throw new Error('BAD')
     })
-    
-    const s0  = await si.entity.adopt(trx)
+
+    const s0 = await si.entity.adopt(trx)
 
     let txid = s0.entity.state().transaction.id
     expect(txid).exists()
-    
+
     try {
       await s0.post('foo:red')
-    }
-    catch(err) {
+    } catch (err) {
       expect(err.message).equal('seneca: Action foo:red failed: BAD.')
 
       let t0e = s0.entity.state()
@@ -378,7 +362,7 @@ describe('transaction', function () {
       // idempotent
       const txe0 = await s0.entity.commit()
       expect(txe0.id).equal(txid)
-      
+
       foos = await si.entity('foo').list$()
       expect(foos.length).equal(0)
 
@@ -388,13 +372,10 @@ describe('transaction', function () {
     throw new Error('expected the call to throw')
   })
 
-
   it('adopt-rollback-direct', async () => {
     const trx = await Knex(DbConfigPG).transaction()
 
-    const foo0s = await trx('foo')
-          .insert({p1:'t0', id: 't0'})
-          .returning('*')
+    const foo0s = await trx('foo').insert({ p1: 't0', id: 't0' }).returning('*')
     expect(foo0s[0].p1).equal('t0')
 
     trx.rollback()
@@ -404,23 +385,21 @@ describe('transaction', function () {
 
     const foo1s = await Knex(DbConfigPG).select('*').from('foo')
     expect(foo1s.length).equal(0)
-
   })
-
 })
 
 function makeSenecaForTest(DbConfig, opts = {}) {
   const si = Seneca().test()
 
-  const { entity_opts = {} , postgres_opts = {} } = opts
+  const { entity_opts = {}, postgres_opts = {} } = opts
 
   si.use('promisify')
-  si.use('seneca-entity', { 
+  si.use('seneca-entity', {
     mem_store: false,
-    ...entity_opts, 
+    ...entity_opts,
   })
-  
-  si.use(KnexStore, { ...DbConfig, ...postgres_opts})
+
+  si.use(KnexStore, { ...DbConfig, ...postgres_opts })
 
   return si
 }

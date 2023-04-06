@@ -1,11 +1,9 @@
 // const DbConfig = require('./config/database/config')
 const Seneca = require('seneca')
 
-
 run()
 
 async function run() {
-
   const configDB = {
     client: 'pg',
     connection: {
@@ -18,13 +16,13 @@ async function run() {
   }
 
   const seneca = Seneca()
-        .test()
-        .use('promisify')
-        .use('entity')
-        .use('..', configDB)
+    .test()
+    .use('promisify')
+    .use('entity')
+    .use('..', configDB)
 
   await seneca.ready()
-  
+
   const foo0 = await seneca.entity('foo').data$({ id$: 'f0', x: 0 }).save$()
   console.log(foo0)
 
@@ -36,5 +34,4 @@ async function run() {
 
   const list = await seneca.entity('foo').list$()
   console.log(list)
-
 }

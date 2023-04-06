@@ -10,14 +10,20 @@ const intern = {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
         const isQArray = Array.isArray(q);
-        const filter = intern.isObjectEmpty(q) ? { ...entp } : isQArray ? q : { ...q };
+        const filter = intern.isObjectEmpty(q)
+            ? { ...entp }
+            : isQArray
+                ? q
+                : { ...q };
         if (filter.native$) {
-            const argsNative = typeof filter.native$ === 'string' ? {
-                query: filter.native$
-            } : {
-                query: filter.native$[0],
-                data: filter.native$.slice(1)
-            };
+            const argsNative = typeof filter.native$ === 'string'
+                ? {
+                    query: filter.native$,
+                }
+                : {
+                    query: filter.native$[0],
+                    data: filter.native$.slice(1),
+                };
             const query = await (0, qbuilder_1.default)(knex).raw(argsNative);
             return query.rows.map((row) => intern.makeent(ent, row));
         }
@@ -29,7 +35,7 @@ const intern = {
             const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC';
             sort = {
                 field: firstKey,
-                order: sortValue
+                order: sortValue,
             };
             delete filter.sort$;
         }
@@ -47,7 +53,7 @@ const intern = {
             isArray: isQArray,
             sort,
             skip,
-            ...(limit && { limit })
+            ...(limit && { limit }),
         };
         const query = await (0, qbuilder_1.default)(knex).select(args);
         return query.map((row) => intern.makeent(ent, row));
@@ -61,7 +67,7 @@ const intern = {
             const sortValue = q.sort$[firstKey] == 1 ? 'ASC' : 'DESC';
             sort = {
                 field: firstKey,
-                order: sortValue
+                order: sortValue,
             };
             delete q.sort$;
         }
@@ -76,7 +82,7 @@ const intern = {
             table_name: ent_table,
             filter: q,
             sort,
-            skip
+            skip,
         };
         const query = await (0, qbuilder_1.default)(knex).first(args);
         return intern.makeent(ent, query);
@@ -111,7 +117,7 @@ const intern = {
         const args = {
             table_name: ent_table,
             data: rest,
-            id: id
+            id: id,
         };
         const query = await (0, qbuilder_1.default)(knex).update(args);
         const formattedQuery = query.length == 1 ? query[0] : query;
@@ -149,7 +155,7 @@ const intern = {
                 const sortValue = filter.sort$[firstKey] == 1 ? 'ASC' : 'DESC';
                 sort = {
                     field: firstKey,
-                    order: sortValue
+                    order: sortValue,
                 };
             }
             delete filter.sort$;
@@ -158,7 +164,7 @@ const intern = {
                 table_name: ent_table,
                 filter,
                 sort,
-                skip
+                skip,
             };
             if (all) {
                 const argsSelect = {
@@ -166,7 +172,7 @@ const intern = {
                     data: filter,
                     sort,
                     skip,
-                    limit
+                    limit,
                 };
                 const ids = await (0, qbuilder_1.default)(knex).select(argsSelect);
                 const argsDelete = {
@@ -174,7 +180,7 @@ const intern = {
                     filter: ids.map((id) => id.id),
                     isLoad,
                     skip,
-                    isArray: true
+                    isArray: true,
                 };
                 await (0, qbuilder_1.default)(knex).delete(argsDelete);
                 return null;
@@ -185,7 +191,7 @@ const intern = {
             table_name: ent_table,
             filter: first ? { id: first.id } : filter,
             isLoad,
-            skip
+            skip,
         };
         if (all) {
             await (0, qbuilder_1.default)(knex).truncate(args);
@@ -203,7 +209,7 @@ const intern = {
         const args = {
             table_name: ent_table,
             data: data,
-            id: q
+            id: q,
         };
         const query = (0, qbuilder_1.default)(knex).upsert(args);
         return query;
@@ -306,7 +312,7 @@ const intern = {
             return transaction.handle;
         }
         return knex;
-    }
+    },
 };
 exports.default = intern;
 //# sourceMappingURL=intern.js.map

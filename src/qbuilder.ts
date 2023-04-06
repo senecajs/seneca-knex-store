@@ -1,6 +1,6 @@
-import type { Knex } from 'knex';
+import type { Knex } from 'knex'
 
-function QBuilder(knex: Knex ) {
+function QBuilder(knex: Knex) {
   const Q = {
     upsert(args: { table_name: string; data: any; id: string }) {
       return knex(args.table_name).upsert(args.data, args.id)
@@ -11,9 +11,12 @@ function QBuilder(knex: Knex ) {
         .update(args.data)
         .returning('*')
     },
-    insert(args: { table_name: string; data: any, upsert?: any }) {
+    insert(args: { table_name: string; data: any; upsert?: any }) {
       if (args.upsert) {
-        return knex(args.table_name).insert(args.data).onConflict(args.upsert).merge()
+        return knex(args.table_name)
+          .insert(args.data)
+          .onConflict(args.upsert)
+          .merge()
       }
       return knex(args.table_name).insert(args.data).returning('*')
     },
@@ -79,14 +82,17 @@ function QBuilder(knex: Knex ) {
           .offset(args.skip || 0)
           .first()
       }
-      if(args.skip) {
-        return knex(args.table_name).where(args.filter).offset(args.skip).first()
+      if (args.skip) {
+        return knex(args.table_name)
+          .where(args.filter)
+          .offset(args.skip)
+          .first()
       }
       return knex(args.table_name).where(args.filter).first()
     },
     raw(args: { query: string; data?: any }) {
       return knex.raw(args.query, args.data)
-    }
+    },
   }
 
   return Q
