@@ -123,7 +123,7 @@ function knex_store(this: any, options: Options) {
     }
   )
 
-  seneca.add('sys:entity,transaction:begin', async function (this: any, msg: any, reply: any) {
+  seneca.add('sys:entity,transaction:transaction', async function (this: any, msg: any, reply: any) {
     const trxKnexClient = await rootKnexClient.transaction()
 
     reply({
@@ -133,7 +133,7 @@ function knex_store(this: any, options: Options) {
 
 
   seneca.add(
-    'sys:entity,transaction:end',
+    'sys:entity,transaction:commit',
     function (msg: any, reply: any) {
       const transactionDetails = msg.get_transaction()
       const trxKnexClient = transactionDetails.handle
