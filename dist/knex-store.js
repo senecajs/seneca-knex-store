@@ -79,8 +79,9 @@ function knex_store(options) {
             reply({ native: () => rootKnexClient });
         },
         close: function (_msg, reply) {
-            reply({ native: () => rootKnexClient }).then(() => {
-                rootKnexClient.destroy();
+            rootKnexClient.destroy().then(reply)
+                .catch((err) => {
+                reply(err);
             });
         },
     };
@@ -118,7 +119,6 @@ function knex_store(options) {
             });
         })
             .catch((err) => {
-            console.log('WWW', err);
             reply(err);
         });
     });

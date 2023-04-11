@@ -127,9 +127,10 @@ function knex_store(this: any, options: Options) {
     },
 
     close: function (_msg: any, reply: any) {
-      reply({ native: () => rootKnexClient }).then(() => {
-        rootKnexClient.destroy()
-      })
+      rootKnexClient.destroy().then(reply)
+        .catch((err: any) => {
+          reply(err)
+        })
     },
   }
 
@@ -182,7 +183,6 @@ function knex_store(this: any, options: Options) {
           })
         })
         .catch((err: any) => {
-          console.log('WWW', err)
           reply(err)
         })
     }
