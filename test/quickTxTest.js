@@ -23,9 +23,11 @@ async function run() {
     })
     .use('..', configDB)
 
-  await seneca.ready()
+  seneca.ready(() => {
+      seneca.close()
+  })
 
-  const s0 = await seneca.entity.begin()
+  const s0 = await seneca.entity.transaction()
 
   const test = await s0.entity('foo').data$({ p1: 't2' }).save$()
   console.log('test', test)
