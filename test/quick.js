@@ -8,7 +8,7 @@ async function run() {
     client: 'pg',
     connection: {
       host: '127.0.0.1',
-      port: 5433,
+      port: 55433,
       user: 'senecatest',
       password: 'senecatest_0102',
       database: 'senecatest_knex',

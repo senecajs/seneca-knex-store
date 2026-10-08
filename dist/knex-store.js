@@ -79,15 +79,41 @@ function knex_store(options) {
             reply({ native: () => rootKnexClient });
         },
         close: function (_msg, reply) {
-            rootKnexClient.destroy().then(reply)
+            if (null == rootKnexClient) {
+                return reply();
+            }
+            const pool = rootKnexClient;
+            rootKnexClient = null;
+            pool.destroy().then(() => reply())
                 .catch((err) => {
                 reply(err);
             });
         },
     };
-    const meta = seneca.store.init(seneca, options, store);
+    // Current seneca-entity exports the store init function; Seneca 3 also
+    // provided it as seneca.store.init.
+    const init = seneca.export('entity/init') || (seneca.store && seneca.store.init);
+    const meta = init(seneca, options, store);
     seneca.add({ init: store.name, tag: meta.tag }, function (_msg, done) {
         return configure(options, done);
+    });
+    // Seneca 3 closes via role:seneca,cmd:close; Seneca 4 via
+    // sys:seneca,cmd:close. Release the Knex connection pool on close so
+    // the process can exit.
+    const close_pattern = seneca.version.startsWith('3.')
+        ? 'role:seneca,cmd:close'
+        : 'sys:seneca,cmd:close';
+    seneca.add(close_pattern, function (msg, reply) {
+        const prior = this.prior.bind(this);
+        const pool = rootKnexClient;
+        rootKnexClient = null;
+        if (null == pool) {
+            return prior(msg, reply);
+        }
+        pool
+            .destroy()
+            .catch(() => null)
+            .then(() => prior(msg, reply));
     });
     seneca.add('sys:entity,transaction:transaction', async function (msg, reply) {
         const trxKnexClient = await rootKnexClient.transaction();
