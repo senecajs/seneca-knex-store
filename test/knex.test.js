@@ -7,27 +7,27 @@ const Shared = require('seneca-store-test')
 const Async = require('async')
 const Knex = require('knex')
 
-const KnexStore = require('../src/knex-store')
+const KnexStore = require('../dist/knex-store')
 
 const DbConfigPG = {
   client: 'pg',
   connection: {
-    host: '127.0.0.1',
-    port: 5433,
-    user: 'senecatest',
-    password: 'senecatest_0102',
-    database: 'senecatest_knex',
+    host: process.env.SENECA_TEST_PG_HOST || '127.0.0.1',
+    port: parseInt(process.env.SENECA_TEST_PG_PORT || '55433', 10),
+    user: process.env.SENECA_TEST_PG_USER || 'senecatest',
+    password: process.env.SENECA_TEST_PG_PASSWORD || 'senecatest_0102',
+    database: process.env.SENECA_TEST_PG_DATABASE || 'senecatest_knex',
   },
 }
 
 const DbConfigSQLite = {
   client: 'pg',
   connection: {
-    host: '127.0.0.1',
-    port: 5433,
-    user: 'senecatest',
-    password: 'senecatest_0102',
-    database: 'senecatest_knex',
+    host: process.env.SENECA_TEST_PG_HOST || '127.0.0.1',
+    port: parseInt(process.env.SENECA_TEST_PG_PORT || '55433', 10),
+    user: process.env.SENECA_TEST_PG_USER || 'senecatest',
+    password: process.env.SENECA_TEST_PG_PASSWORD || 'senecatest_0102',
+    database: process.env.SENECA_TEST_PG_DATABASE || 'senecatest_knex',
   },
 }
 
@@ -260,7 +260,8 @@ describe('transaction', function () {
     try {
       await s0.post('foo:red')
     } catch (err) {
-      expect(err.message).equal('seneca: Action foo:red failed: BAD.')
+      // Seneca 4 does not wrap action errors; Seneca 3 keeps the original in err.orig.
+      expect((err.orig || err).message).equal('BAD')
 
       let t0e = s0.entity.state()
       expect(t0e.transaction.id).equal(txid)
@@ -351,7 +352,8 @@ describe('transaction', function () {
     try {
       await s0.post('foo:red')
     } catch (err) {
-      expect(err.message).equal('seneca: Action foo:red failed: BAD.')
+      // Seneca 4 does not wrap action errors; Seneca 3 keeps the original in err.orig.
+      expect((err.orig || err).message).equal('BAD')
 
       let t0e = s0.entity.state()
       expect(t0e.transaction.id).equal(txid)

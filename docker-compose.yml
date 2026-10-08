@@ -1,11 +1,19 @@
+name: seneca-knex-store
+
 services:
   postgres:
-    build:
-      context: ./test/config/docker/
-      dockerfile: postgres.Dockerfile
+    image: postgres:18
+    container_name: seneca-knex-store-postgres
     ports:
-      - '5433:5432'
+      - '55433:5432'
     environment:
       POSTGRES_PASSWORD: senecatest_0102
       POSTGRES_DB: senecatest_knex
       POSTGRES_USER: senecatest
+    volumes:
+      - ./test/config/docker/dbschema.sql:/docker-entrypoint-initdb.d/dbschema.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U senecatest -d senecatest_knex']
+      interval: 5s
+      timeout: 5s
+      retries: 20

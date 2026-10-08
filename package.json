@@ -21,18 +21,17 @@
   "scripts": {
     "build": "tsc -d",
     "watch": "tsc -w -d",
-    "docker-build": "docker-compose build",
-    "docker-start": "docker-compose up -d",
-    "docker-stop": "docker-compose kill",
     "sqlite-migrate-build": "sqlite3 -init ./test/config/database/sqliteschema.sql ./test/config/database/senecatest.db '.exit'",
-    "test": "lab -v -P test -L -t 90 -r console -o stdout -r html -o test/coverage.html -r lcov -o test/lcov.info --sourcemaps --transform node_modules/lab-transform-typescript",
-    "test-some": "lab -v -P test --sourcemaps --transform node_modules/lab-transform-typescript -g",
+    "test": "tsc -d && lab -v -P test -t 80 -r console -o stdout -r html -o test/coverage.html -r lcov -o test/lcov.info",
+    "test-some": "tsc -d && lab -v -P test -g",
     "prettier": "prettier --write --no-semi --single-quote src/**/*.ts test/*.js",
     "reset": "npm run clean && npm i && npm test",
     "clean": "rm -rf node_modules dist package-lock.json yarn.lock",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"` && echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION && git push && git tag v$REPO_VERSION && git push --tags;",
     "repo-publish": "npm run clean && npm i --registry=http://registry.npmjs.org && npm run repo-publish-quick",
-    "repo-publish-quick": "npm run prettier && npm run build && npm test && npm run repo-tag && npm publish --access public --registry=https://registry.npmjs.org"
+    "repo-publish-quick": "npm run prettier && npm run build && npm test && npm run repo-tag && npm publish --access public --registry=https://registry.npmjs.org",
+    "services:up": "docker compose up -d --wait",
+    "services:down": "docker compose down -v"
   },
   "repository": {
     "type": "git",
@@ -47,24 +46,22 @@
   ],
   "peerDependencies": {
     "knex": ">=2.0.0",
-    "seneca": ">=3",
+    "seneca": ">=3 || >=4.0.0-rc5",
     "seneca-entity": ">=22.0"
   },
   "devDependencies": {
-    "knex": ">=2.0.0",
-    "seneca": ">=3",
-    "@hapi/code": "9.0.3",
-    "@hapi/lab": "25.1.2",
-    "async": "3.2.4",
-    "lab-transform-typescript": "3.0.1",
-    "pg": "8.10.0",
-    "prettier": "2.8.7",
-    "seneca-plugin-validator": "0.6.1",
-    "seneca-promisify": "3.4.0",
-    "seneca-store-test": "5.2.0",
-    "seneca-entity": ">=22.0.0",
-    "sqlite3": "^5.1.6",
-    "typescript": "5.0.3"
+    "@hapi/code": "^9.0.3",
+    "@hapi/lab": "^26.0.1",
+    "@types/node": "^24.19.1",
+    "async": "^3.2.6",
+    "knex": "^3.3.0",
+    "pg": "^8.23.1",
+    "prettier": "^2.8.8",
+    "seneca": "^4.0.0-rc5",
+    "seneca-entity": "~22.1.0",
+    "seneca-promisify": "^3.7.2",
+    "seneca-store-test": "^6.0.0",
+    "typescript": "^5.9.3"
   },
   "files": [
     "README.md",
@@ -72,5 +69,8 @@
     "LICENSE",
     "src",
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "uuid": "^11.1.1"
+  }
 }
