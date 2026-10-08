@@ -1,0 +1,105 @@
+From 0f19a580d9ae947a8f40b3ccc1dafb87ebd6f0e2 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 8 Oct 2026 12:20:39 +0000
+Subject: [PATCH] Run CI on Node 24 and 22 with a Postgres service container
+
+The workflow runs postgres:18 as a GitHub Actions service container on
+host port 55433 (matching docker-compose.yml), loads the test schema
+with psql, and tests on Node 24.x and 22.x. The obsolete Node 14-17
+matrix, Windows/macOS runners and Coveralls upload are removed.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LaHppcejXbSsAH4BZXNsjV
+---
+ .github/workflows/build.yml | 67 +++++++++++++++++++++++--------------
+ 1 file changed, 41 insertions(+), 26 deletions(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 1d1a39d..c2371bf 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -1,40 +1,55 @@
+-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+-
+ name: build
+ 
+ on:
+   push:
+-    branches: [ master ]
++    branches: [master, main]
+   pull_request:
+-    branches: [ master ]
++    branches: [master, main]
+ 
+ jobs:
+   build:
+-    timeout-minutes: 6
++    timeout-minutes: 10
+ 
+     strategy:
+       fail-fast: false
+       matrix:
+-        os: [ubuntu-latest, windows-latest, macos-latest]
+-        node-version: [17.x, 16.x, 14.x]
++        node-version: [24.x, 22.x]
+ 
+-    runs-on: ${{ matrix.os }} 
+-        
+-    steps:
+-    - uses: actions/checkout@v2
+-    - name: Use Node.js ${{ matrix.node-version }}
+-      uses: actions/setup-node@v1
+-      with:
+-        node-version: ${{ matrix.node-version }}
+-    - run: npm install
+-      # manually install peerdeps for node 12,14
+-    - run: npm i seneca seneca-entity
+-    - run: npm run build --if-present
+-    - run: npm test
++    runs-on: ubuntu-latest
++
++    services:
++      postgres:
++        image: postgres:18
++        env:
++          POSTGRES_PASSWORD: senecatest_0102
++          POSTGRES_DB: senecatest_knex
++          POSTGRES_USER: senecatest
++        ports:
++          - 55433:5432
++        options: >-
++          --health-cmd "pg_isready -U senecatest -d senecatest_knex"
++          --health-interval 5s
++          --health-timeout 5s
++          --health-retries 20
+ 
+-    - name: Coveralls
+-      uses: coverallsapp/github-action@master
+-      with:
+-        github-token: ${{ secrets.GITHUB_TOKEN }}
+-        path-to-lcov: ./test/lcov.info
++    env:
++      SENECA_TEST_PG_HOST: 127.0.0.1
++      SENECA_TEST_PG_PORT: 55433
++      SENECA_TEST_PG_USER: senecatest
++      SENECA_TEST_PG_PASSWORD: senecatest_0102
++      SENECA_TEST_PG_DATABASE: senecatest_knex
++
++    steps:
++      - uses: actions/checkout@v4
++      - name: Use Node.js ${{ matrix.node-version }}
++        uses: actions/setup-node@v4
++        with:
++          node-version: ${{ matrix.node-version }}
++      # Service containers start before checkout, so the schema is loaded here.
++      - name: Load test schema
++        run: psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55433 -U senecatest -d senecatest_knex -f test/config/docker/dbschema.sql
++        env:
++          PGPASSWORD: senecatest_0102
++      - run: npm install
++      - run: npm run build --if-present
++      - run: npm test
+-- 
+2.43.0
+
