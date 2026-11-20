@@ -17,8 +17,9 @@ async function run() {
 
   const seneca = Seneca()
     .test()
-    .use('promisify')
-    .use('entity', {
+    // Transactions need seneca-entity 22.x, installed by hand:
+    // npm install --no-save seneca-entity@22.1.0
+    .use(require('seneca-entity'), {
       transaction: { active: true },
     })
     .use('..', configDB)

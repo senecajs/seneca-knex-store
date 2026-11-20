@@ -386,7 +386,7 @@ const intern = {
 
   async getKnexClient(knex: Knex, seneca: any, msg: any, meta: any) {
     // The transaction API (seneca.entity.state) exists only in
-    // seneca-entity 22.x; later releases do not provide it.
+    // seneca-entity 22.x; @seneca/entity does not provide it.
     const state =
       'function' === typeof seneca.entity.state ? seneca.entity.state() : null
     let transaction = state && state.transaction
