@@ -38,7 +38,7 @@ explanation for background.
 | `client` | option | [Options](reference/options.md#knex-configuration) |
 | `connection` | option | [Options](reference/options.md#knex-configuration) |
 | other Knex settings (`pool`, `searchPath`, ...) | option | [Options](reference/options.md#knex-configuration) |
-| `map` | option (seneca-entity) | [Options](reference/options.md#store-options) |
+| `map` | option (`@seneca/entity`) | [Options](reference/options.md#store-options) |
 | `SENECA_TEST_PG_*` | test environment variables | [Run the tests locally](how-to/run-the-tests-locally.md) |
 | `sys:entity,cmd:save` | action | [Messages](reference/messages.md#save) |
 | `sys:entity,cmd:load` | action | [Messages](reference/messages.md#load) |
@@ -47,7 +47,7 @@ explanation for background.
 | `sys:entity,cmd:native` | action | [Messages](reference/messages.md#native) |
 | `sys:entity,cmd:close` | action | [Messages](reference/messages.md#close) |
 | `init:knex-store` | action | [Messages](reference/messages.md#init-and-close-hooks) |
-| `sys:seneca,cmd:close` / `role:seneca,cmd:close` | action (close hook) | [Messages](reference/messages.md#init-and-close-hooks) |
+| `sys:seneca,cmd:close` | action (close hook) | [Messages](reference/messages.md#init-and-close-hooks) |
 | `sys:entity,transaction:transaction` | action | [Messages](reference/messages.md#transactions) |
 | `sys:entity,transaction:commit` | action | [Messages](reference/messages.md#transactions) |
 | `sys:entity,transaction:rollback` | action | [Messages](reference/messages.md#transactions) |

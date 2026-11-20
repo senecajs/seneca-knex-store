@@ -34,7 +34,7 @@ is tested.
 
 ## Store options
 
-The options are also given to seneca-entity's store `init`, which reads:
+The options are also given to the store `init` of `@seneca/entity`, which reads:
 
 | Option | Type | Default | Effect |
 | ------ | ---- | ------- | ------ |

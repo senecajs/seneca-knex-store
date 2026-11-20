@@ -4,8 +4,7 @@ const Seneca = require('seneca')
 
 const seneca = Seneca({ legacy: false })
   .test()
-  .use('promisify')
-  .use('entity', { mem_store: false })
+  .use('@seneca/entity', { mem_store: false })
   .use(require('../..'), {
     client: 'pg',
     connection: {
