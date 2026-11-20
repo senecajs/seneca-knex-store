@@ -7,6 +7,12 @@ const intern = {
     const ent_table = intern.tablenameUtil(ent)
     const entp = intern.makeentp(ent)
 
+    // @seneca/entity passes the list$ query as given, so an id string or
+    // number lists that one entity, as an array of ids does.
+    if ('string' === typeof q || 'number' === typeof q) {
+      q = [q]
+    }
+
     const isQArray = Array.isArray(q)
 
     const filter = intern.isObjectEmpty(q)
