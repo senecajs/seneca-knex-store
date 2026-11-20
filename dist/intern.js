@@ -9,6 +9,11 @@ const intern = {
     async findKnex(knex, ent, q) {
         const ent_table = intern.tablenameUtil(ent);
         const entp = intern.makeentp(ent);
+        // @seneca/entity passes the list$ query as given, so an id string or
+        // number lists that one entity, as an array of ids does.
+        if ('string' === typeof q || 'number' === typeof q) {
+            q = [q];
+        }
         const isQArray = Array.isArray(q);
         const filter = intern.isObjectEmpty(q)
             ? { ...entp }
@@ -308,7 +313,7 @@ const intern = {
     },
     async getKnexClient(knex, seneca, msg, meta) {
         // The transaction API (seneca.entity.state) exists only in
-        // seneca-entity 22.x; later releases do not provide it.
+        // seneca-entity 22.x; @seneca/entity does not provide it.
         const state = 'function' === typeof seneca.entity.state ? seneca.entity.state() : null;
         let transaction = state && state.transaction;
         if (transaction && !transaction.finish && false !== msg.transaction$) {
