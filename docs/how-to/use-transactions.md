@@ -2,17 +2,24 @@
 
 Goal: run several entity operations inside one Knex transaction.
 
-Transactions need **seneca-entity 22.x**, which provides
+Transactions need **`seneca-entity` 22.x**, which provides
 `seneca.entity.transaction()`, `commit()`, `rollback()`, `adopt()` and
-`state()`. Later seneca-entity releases removed that API; with them the
-store ignores transactions and every operation uses the connection pool.
+`state()`. Later releases removed that API, and `@seneca/entity` 29, the
+entity plugin for Seneca 4, has none; with it the store ignores
+transactions and every operation uses the connection pool.
 
-1. Enable transactions in seneca-entity:
+`seneca-entity` 22.x still loads on Seneca 4, and the transaction tests pass
+with 22.1.0 in place of `@seneca/entity`. That is not a supported setup for
+this release: the peer dependency is `@seneca/entity`, and the transaction
+tests run only when `seneca-entity` 22.x is installed by hand (see
+[Run the tests locally](run-the-tests-locally.md#transaction-tests)).
+
+1. Enable transactions in `seneca-entity` 22.x, loaded in place of
+   `@seneca/entity`:
 
    ```js
    seneca
-     .use('promisify')
-     .use('entity', { mem_store: false, transaction: { active: true } })
+     .use('seneca-entity', { mem_store: false, transaction: { active: true } })
      .use('@seneca/knex-store', knexConfig)
    ```
 

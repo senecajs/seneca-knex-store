@@ -1,10 +1,10 @@
 # Messages
 
-The store registers the standard seneca-entity store actions through
-seneca-entity's store `init`, plus transaction and lifecycle actions. You
+The store registers the standard entity store actions through the store
+`init` of `@seneca/entity`, plus transaction and lifecycle actions. You
 normally call them through the entity API (`save$`, `load$`, `list$`,
 `remove$`, `native$`). Seneca 3 style `role:entity,cmd:*` messages are
-translated to `sys:entity` by seneca-entity.
+translated to `sys:entity` by `@seneca/entity`.
 
 Each entity maps to a table named `<base>_<name>` (or `<name>` when there is
 no base). Zone is ignored. The table must exist.
@@ -65,7 +65,7 @@ instance.
 
 ## Transactions
 
-Available only with seneca-entity 22.x (see
+Available only with `seneca-entity` 22.x, not with `@seneca/entity` (see
 [Use transactions](../how-to/use-transactions.md)).
 
 | Pattern | Reply |
@@ -83,7 +83,7 @@ handle unless the message has `transaction$: false`.
 | Pattern | Effect |
 | ------- | ------ |
 | `init:knex-store` | Creates the Knex instance from the plugin options. |
-| `sys:seneca,cmd:close` (Seneca 4) or `role:seneca,cmd:close` (Seneca 3) | Destroys the Knex pool, then calls the prior close action. |
+| `sys:seneca,cmd:close` | Destroys the Knex pool, then calls the prior close action. |
 
 ## Plugin exports
 

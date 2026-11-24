@@ -5,11 +5,10 @@ This tutorial stores entities in Postgres through Knex with Seneca 4.
 ## 1. Install
 
 ```sh
-npm install seneca seneca-promisify seneca-entity@~22.1.0 @seneca/knex-store knex pg
+npm install seneca@^4 @seneca/entity @seneca/knex-store knex pg
 ```
 
-`seneca-entity` 22.1 is the release whose transaction API this store uses.
-Plain save, load, list and remove also work with later seneca-entity releases.
+You need Node.js 24 or later.
 
 ## 2. Start a database
 
@@ -32,8 +31,7 @@ const Seneca = require('seneca')
 
 const seneca = Seneca({ legacy: false })
   .test()
-  .use('promisify')
-  .use('entity', { mem_store: false })
+  .use('@seneca/entity', { mem_store: false })
   .use(require('../..'), {
     client: 'pg',
     connection: {
@@ -75,7 +73,7 @@ In your own project, replace `require('../..')` with `'@seneca/knex-store'`.
 node docs/examples/getting-started.js
 ```
 
-Output (Seneca 4.0.0-rc5, Node 24):
+Output (Seneca 4, Node.js 24):
 
 ```
 saved example-1 apple

@@ -2,7 +2,7 @@
 
 Goal: run `npm test` against a local Postgres started by Docker.
 
-1. Use Node 24 (Node 22 is also supported).
+1. Use Node.js 24 or later.
 2. Install dependencies:
 
    ```sh
@@ -47,9 +47,22 @@ match `docker-compose.yml`.
 ## Test against unreleased Seneca
 
 ```sh
-npm install --no-save /path/to/seneca-4.0.0.tgz
+npm install --no-save /path/to/seneca-4.x.y.tgz
 npm test
 npm install   # restore the devDependency
+```
+
+## Transaction tests
+
+The transaction tests run only when `seneca-entity` 22.x is installed, the
+only release with the transaction API the store uses. `@seneca/entity`, the
+development dependency, has none, so by default they are reported as
+skipped. To run them:
+
+```sh
+npm install --no-save seneca-entity@22.1.0
+npm test
+npm install   # remove it again
 ```
 
 ## CI

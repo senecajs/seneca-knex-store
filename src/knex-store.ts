@@ -139,10 +139,9 @@ function knex_store(this: any, options: Options) {
     },
   }
 
-  // Current seneca-entity exports the store init function; Seneca 3 also
-  // provided it as seneca.store.init.
-  const init =
-    seneca.export('entity/init') || (seneca.store && seneca.store.init)
+  // The entity plugin (@seneca/entity) exports the store init function.
+  // Load it before this store.
+  const init = seneca.export('entity/init')
   const meta = init(seneca, options, store)
 
   seneca.add(
@@ -152,13 +151,8 @@ function knex_store(this: any, options: Options) {
     }
   )
 
-  // Seneca 3 closes via role:seneca,cmd:close; Seneca 4 via
-  // sys:seneca,cmd:close. Release the Knex connection pool on close so
-  // the process can exit.
-  const close_pattern = seneca.version.startsWith('3.')
-    ? 'role:seneca,cmd:close'
-    : 'sys:seneca,cmd:close'
-  seneca.add(close_pattern, function (this: any, msg: any, reply: any) {
+  // Release the Knex connection pool on close so the process can exit.
+  seneca.add('sys:seneca,cmd:close', function (this: any, msg: any, reply: any) {
     const prior = this.prior.bind(this)
     const pool = rootKnexClient
     rootKnexClient = null

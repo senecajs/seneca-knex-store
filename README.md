@@ -2,8 +2,9 @@
 
 A [Seneca](https://github.com/senecajs/seneca) entity store plugin that keeps
 entity data in a SQL database through [Knex](https://knexjs.org), tested
-with Postgres. Works with Seneca 4 (tested with 4.0.0-rc5 and 4.0.0) and
-Seneca 3, on Node 24 and 22.
+with Postgres. It needs Seneca 4 (`seneca` `^4.0.0`), the entity plugin
+`@seneca/entity` 29 and Node.js 24 or later. Seneca 3 users stay on
+`@seneca/knex-store@7`.
 
 [![npm version](https://badge.fury.io/js/%40seneca%2Fknex-store.svg)](https://badge.fury.io/js/%40seneca%2Fknex-store)
 [![Build](https://github.com/senecajs/seneca-knex-store/actions/workflows/build.yml/badge.svg)](https://github.com/senecajs/seneca-knex-store/actions/workflows/build.yml)
@@ -14,10 +15,11 @@ Seneca 3, on Node 24 and 22.
 ## Install
 
 ```sh
-npm install seneca seneca-promisify seneca-entity @seneca/knex-store knex pg
+npm install seneca@^4 @seneca/entity @seneca/knex-store knex pg
 ```
 
-Use `seneca-entity@~22.1.0` if you need [transactions](docs/how-to/use-transactions.md).
+[Transactions](docs/how-to/use-transactions.md) need `seneca-entity` 22.x in
+place of `@seneca/entity`, which is not a supported setup for this release.
 
 ## Quick Example
 
@@ -25,8 +27,7 @@ Use `seneca-entity@~22.1.0` if you need [transactions](docs/how-to/use-transacti
 const Seneca = require('seneca')
 
 const seneca = Seneca()
-  .use('promisify')
-  .use('entity', { mem_store: false })
+  .use('@seneca/entity', { mem_store: false })
   .use('@seneca/knex-store', {
     client: 'pg',
     connection: {
@@ -76,7 +77,7 @@ writing SQL. See [How it works](docs/explanation/how-it-works.md).
 
 ## Contributing
 
-Tests need Postgres. With Docker and Node 24 (or 22):
+Tests need Postgres. With Docker and Node.js 24 or later:
 
 ```sh
 npm install
@@ -86,19 +87,16 @@ npm run services:down
 ```
 
 Settings are read from `SENECA_TEST_PG_*` variables, see
-[Run the tests locally](docs/how-to/run-the-tests-locally.md). The
-devDependency is the Seneca 4 prerelease (`seneca@^4.0.0-rc5`); `.npmrc`
-sets `legacy-peer-deps` while published dependencies exclude it from their
-peer range. The CI workflow is in `.patches/` (apply with
-`git am .patches/*.patch`).
+[Run the tests locally](docs/how-to/run-the-tests-locally.md). The CI
+workflow is in `.patches/` (apply with `git am .patches/*.patch`).
 
 ## Background
 
 The store was created in 2021 (see [CHANGES.md](CHANGES.md)).
 
-| Seneca | Node | Status |
-| ------ | ---- | ------ |
-| 4.x | 24, 22 | tested |
-| 3.x | 18 and later | supported, not tested in CI |
+| Version | Seneca | Entity plugin | Node |
+| ------- | ------ | ------------- | ---- |
+| 8.x | 4 | `@seneca/entity` 29 | 24 or later |
+| 7.x | 3 | `seneca-entity` 22 and later | 18 and later |
 
 Licensed under [MIT](LICENSE).

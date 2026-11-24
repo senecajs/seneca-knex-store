@@ -3,7 +3,7 @@ const Lab = require('@hapi/lab')
 const lab = (exports.lab = Lab.script())
 const { before, describe, it, beforeEach, afterEach } = lab
 const { expect } = require('@hapi/code')
-const Shared = require('seneca-store-test')
+const Shared = require('@seneca/store-test')
 const Async = require('async')
 const Knex = require('knex')
 
@@ -184,8 +184,26 @@ function smokeTests(senecaForTest) {
   })
 }
 
-describe('transaction', function () {
+// Transactions need entity.transaction/commit/rollback/adopt/state, which
+// only seneca-entity 22.x provides. @seneca/entity has no transaction API,
+// so these tests run only after `npm install --no-save seneca-entity@22.1.0`.
+const entityHasTransactions = (() => {
+  try {
+    return /^22\./.test(require('seneca-entity/package.json').version)
+  } catch (_err) {
+    return false
+  }
+})()
+
+describe('transaction', { skip: !entityHasTransactions }, function () {
+  if (!entityHasTransactions) {
+    return it('requires seneca-entity 22.x', { skip: true }, () => {})
+  }
+
+  // Pass the module itself, so that the plugin is the version checked
+  // above, whatever Seneca's own name lookup would find.
   const si = makeSenecaForTest(DbConfigPG, {
+    entity: require('seneca-entity'),
     entity_opts: { transaction: { active: true } },
   })
 
@@ -260,8 +278,8 @@ describe('transaction', function () {
     try {
       await s0.post('foo:red')
     } catch (err) {
-      // Seneca 4 does not wrap action errors; Seneca 3 keeps the original in err.orig.
-      expect((err.orig || err).message).equal('BAD')
+      // Seneca 4 does not wrap action errors.
+      expect(err.message).equal('BAD')
 
       let t0e = s0.entity.state()
       expect(t0e.transaction.id).equal(txid)
@@ -352,8 +370,8 @@ describe('transaction', function () {
     try {
       await s0.post('foo:red')
     } catch (err) {
-      // Seneca 4 does not wrap action errors; Seneca 3 keeps the original in err.orig.
-      expect((err.orig || err).message).equal('BAD')
+      // Seneca 4 does not wrap action errors.
+      expect(err.message).equal('BAD')
 
       let t0e = s0.entity.state()
       expect(t0e.transaction.id).equal(txid)
@@ -393,10 +411,13 @@ describe('transaction', function () {
 function makeSenecaForTest(DbConfig, opts = {}) {
   const si = Seneca().test()
 
-  const { entity_opts = {}, postgres_opts = {} } = opts
+  const {
+    entity = '@seneca/entity',
+    entity_opts = {},
+    postgres_opts = {},
+  } = opts
 
-  si.use('promisify')
-  si.use('seneca-entity', {
+  si.use(entity, {
     mem_store: false,
     ...entity_opts,
   })

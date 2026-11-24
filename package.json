@@ -1,6 +1,6 @@
 {
   "name": "@seneca/knex-store",
-  "version": "7.2.0",
+  "version": "8.0.0",
   "description": "Seneca data storag plugin for Knex.",
   "main": "dist/knex-store.js",
   "types": "dist/knex-store.d.ts",
@@ -35,7 +35,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/senecajs/seneca-knex-store"
+    "url": "git+https://github.com/senecajs/seneca-knex-store.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   },
   "keywords": [
     "seneca",
@@ -45,22 +51,21 @@
     "knexjs"
   ],
   "peerDependencies": {
+    "@seneca/entity": "^29.0.0",
     "knex": ">=2.0.0",
-    "seneca": ">=3 || >=4.0.0-rc5",
-    "seneca-entity": ">=22.0"
+    "seneca": "^4.0.0"
   },
   "devDependencies": {
     "@hapi/code": "^9.0.3",
     "@hapi/lab": "^26.0.1",
+    "@seneca/entity": "^29.0.0",
+    "@seneca/store-test": "^7.0.0",
     "@types/node": "^24.19.1",
     "async": "^3.2.6",
     "knex": "^3.3.0",
     "pg": "^8.23.1",
     "prettier": "^2.8.8",
-    "seneca": "^4.0.0-rc5",
-    "seneca-entity": "~22.1.0",
-    "seneca-promisify": "^3.7.2",
-    "seneca-store-test": "^6.0.0",
+    "seneca": "^4.0.0",
     "typescript": "^5.9.3"
   },
   "files": [

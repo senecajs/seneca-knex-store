@@ -17,8 +17,7 @@ async function run() {
 
   const seneca = Seneca()
     .test()
-    .use('promisify')
-    .use('entity')
+    .use('@seneca/entity')
     .use('..', configDB)
 
   await seneca.ready()
